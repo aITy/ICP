@@ -1,0 +1,767 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<head>
+
+<title>IJA/2012L Wiki</title>
+<link rel="stylesheet" type="text/css" href="IJA_2012L%20Wiki_files/formfit0.css">
+<script type="text/javascript">
+form_change = false;
+
+function mouseOver(el)
+{
+    el.style.borderStyle = 'inset';
+}
+
+function mouseOut(el)
+{
+    el.style.borderStyle = 'outset'; 
+}
+
+function mouseClick(event, uri)
+{
+    if (!form_change) {
+	if (typeof window.event != 'undefined') window.event.returnValue = false;
+	else event.preventDefault();
+	window.location = uri;   
+    }
+}
+
+function dbhelp(name, field)
+{
+    win = window.open('/FIT/db/help.php?name='+name+'&field='+field+'&table=courses&script=/FIT/db/vyuka/ucitel/cwk.php', 'Help', 'menubar=0,location=0,scrollbars,resizable,dependent=1,width=360,height=320');
+    win.focus();
+    return false;
+}
+
+function form_onload()
+{
+    var i;
+
+    if (!document.dbform) return true;
+    if (location.hash) return true;
+    for (i = 0; i < document.dbform.elements.length; i++) {
+	obj = document.dbform.elements[i];
+	if (obj.type == 'text' && !obj.disabled && !obj.readOnly) {
+	    obj.focus();
+	    break;
+	}
+    }
+    return true;
+}
+
+if (typeof window.event != 'undefined') {
+    document.onkeydown = function() 
+    { 
+	var tag = event.srcElement.tagName.toUpperCase();
+	if (tag != 'INPUT' && tag != 'TEXTAREA') return (event.keyCode != 8); 
+	return true;
+    }
+} else {
+    document.onkeypress = function(e) 
+    { 
+	var tag = e.target.nodeName.toUpperCase();
+	if (tag != 'INPUT' && tag != 'TEXTAREA') return (e.keyCode != 8); 
+	return true;
+    }
+}
+</script>
+<style type="text/css">
+h1, h2, h3, h4, h5, h6 {
+color: black;
+margin: 0 0 0.6em;
+padding-bottom: 0.17em;
+padding-top: 0.5em;
+clear: both;
+}
+h1 {
+font-size: 180%;
+border-bottom: 1px solid #AAAAAA;
+font-weight: normal;
+}
+h2 {
+font-size: 150%;
+border-bottom: 1px solid #AAAAAA;
+font-weight: normal;
+}
+h3 {
+font-size: 132%;
+}
+h4 {
+font-size: 116%;
+}
+h5 {
+font-size: 100%;
+}
+h6 {
+font-size: 80%;
+}
+h3,h4,h5,h6 {
+font-weight: bold;
+}
+p {
+line-height: 1.5em; 
+margin: 0.4em 0 0.5em;
+}
+div.clearerr {
+clear: both;
+}
+a.internal:link,a.internal:visited {
+color: #0645ad;
+text-decoration: none;
+}
+a.internalnone:link,a.internalnone:visited {
+color: red;
+text-decoration: none;
+}
+a.internal:hover {
+color: white;
+background-color: #3f4f5f;
+}
+div.page a.external {
+background: url("http://www.fit.vutbr.cz/common/img/wikilink.png") no-repeat right center ;
+padding-right: 13px;
+text-decoration: none;
+color: #0645ad;
+}
+dt {
+font-weight: bold;
+}
+dd {
+line-height: 1.5em;
+}
+ol {
+line-height: 1.5em;
+}
+ul {
+margin: 0.3em 0 0 1.5em;
+line-height: 1.5em;
+padding: 0;
+list-style-type: square;
+list-style-image: url("http://www.fit.vutbr.cz/common/img/wikili.png");
+}
+li {
+margin-bottom: 0.1em;
+}
+form {
+display: inline;
+}
+div.syntax, pre {
+background-color: #F9F9F9;
+border: 1px dashed #2F6FAB;
+line-height: 1.1em;
+padding: 1em;
+margin: 0;
+}
+.syntax pre {
+border: 0;
+}
+.syntax ol {
+line-height: 1.1em;
+margin: 0 0 0 3.2em;
+padding: 0;
+}
+code,pre,tt {
+/* font-size: 120%;  */
+}
+ul.bar_menu {
+list-style: none;
+padding: 0;
+margin: 0;
+}
+ul.bar_menu li {
+background-color: lightblue;
+border-style: solid solid none solid;
+border-width: 1px 1px 0 1px;
+border-color: #aaaaaa;
+display: inline;
+margin: 0 0.3em 0;
+overflow: visible;
+padding-bottom: 0.2em ;
+}
+ul.bar_menu li a {
+text-decoration: none !important;
+padding: 0 0.8em 0.2em ;
+}
+.selected {
+font-weight: bold;
+padding: 0 0.7em 0.3em !important;
+z-index: 3;
+text-decoration: none;
+background-color: lightblue;
+}    
+div.page {
+background: white;
+border: solid 1px #aaaaaa;
+padding: 0.5em;
+margin-right: 1em;
+}
+div.bar,div.bar-left,div.bar-right {
+display: inline-block;
+margin: 0;
+padding: 0;
+}
+table.toc {
+table-layout: auto;
+}
+table.toc td,table.toc th {
+padding: 2px;
+background-color: #f9f9f9;
+vertical-align: top;
+}
+div.toc {
+background-color: #f9f9f9;
+border: solid 1px #aaaaaa;
+padding: 0.5em 1em 0.5em 0.5em;
+display: inline-block;
+float: right;
+margin: 0.5em;
+}
+div.toc_title {
+font-weight: bold;
+}
+.editsection {
+float: right;
+font-size: 67%;
+font-weight: normal;
+}
+.editsection a {
+text-decoration: none;
+}
+.leftpane {
+width: 200px;
+padding: 0.5em;
+}
+.rightpane {
+}
+.tb_main {
+background: white;
+border: 1px solid #aaaaaa;
+margin: 0 0.5em 1em 0;
+padding: 0.5em;
+}
+table.wikitable {
+background: none repeat scroll 0 0 #F9F9F9;
+border-collapse: collapse;
+border: 1px solid #AAAAAA;
+color: black;
+margin: 1em 1em 1em 0;
+}
+.wikitable th {
+background: #8da7d6;
+text-align: center;
+padding: 0.2em;
+border: 1px solid #AAAAAA;
+}
+.wikitable td {
+padding: 0.2em;
+border: 1px solid #AAAAAA;
+}
+table.inline {
+border-color: #cccccc;
+}
+.inline td, .inline th {
+padding: 0.2em;
+border-color: #cccccc;
+}
+.msglevel1 {
+color: red;
+font-weight: bold;
+}
+div.thumb {
+width: auto;
+clear: both;
+margin: 0.5em 1.4em 1.3em 0;
+border: 1px solid #cccccc;
+padding: 3px;
+}
+div.thumbright {
+width: auto;
+clear: right;
+float: right;
+margin: 0.5em 0 1.3em 1.4em;
+border: 1px solid #cccccc;
+padding: 3px;
+}
+div.thumbleft {
+width: auto;
+clear: left;
+float: left;
+margin: 0.5em 1.4em 1.3em 0;
+border: 1px solid #cccccc;
+padding: 3px;
+}
+div.thumbcenter {
+width: auto;
+clear: both;
+margin: 0.5em 1.4em 1.3em 1.4em;
+border: 1px solid #cccccc;
+padding: 3px;
+}
+div.thumbcaption {
+font-size: 94%;
+line-height: 1.4em;
+padding: 3px;
+}
+div.wiki_top {
+float: right;
+margin-right: 1em;
+}
+ins.diffchange {
+color: green;
+font-weight: bold;
+text-decoration: none;
+}
+del.diffchange {
+color: red;
+font-weight: bold;
+text-decoration: none;
+}
+abbr.newpage,abbr.minor {
+font-weight: bold;
+cursor: help;
+}
+span.history-comment {
+font-style: italic;
+}
+div.revision_info {
+color: #7f7f7f;
+font-size: 84%;
+}
+div.search-data {
+color: green;
+}
+div.warning {
+color: red;
+}
+div.center {
+text-align: center;
+}
+div.block-note {
+background-image: url("http://www.fit.vutbr.cz/images/bulbgraph.png");
+background-position: left top;
+background-repeat: no-repeat;
+}
+div.pagenav-prev {
+float: left;
+}
+div.pagenav-next {
+float: right;
+}
+span.error {
+color: red;
+}
+.block-contents {
+display: block;
+padding-left: 20px;
+}
+.tex {
+vertical-align: middle;
+}
+.home {
+color: #0063a5;
+font-weight: bold;
+}
+hr {
+border: 0 none;
+border-top: 1px solid #aaaaaa;
+height: 1px;
+}
+textarea {
+padding: 2px;
+border: gray 1px solid;
+}
+</style>
+</head>
+<body bgcolor="#e8f0f0" onload="form_onload();">
+<table class="menu2" bgcolor="#0063A5" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/szz/')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/szz/">&nbsp;&nbsp;SZZ a BP/DP&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/garant/')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/garant/">&nbsp;&nbsp;Garanti&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/so/')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/so/">&nbsp;&nbsp;Studijní odd.&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/adm/')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/adm/">&nbsp;&nbsp;Přijímačky&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/cat/')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/cat/">&nbsp;&nbsp;Číselníky&nbsp;&nbsp;</a></th>
+<th class="menu" align="right" width="26" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/cwk.php.cs?title=IJA:Zad%E1n%ED_projektu&amp;id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/cwk.php.cs?title=IJA:Zad%E1n%ED_projektu&amp;id=8655"><img class="FITlogo" src="IJA_2012L%20Wiki_files/flag2_cz.gif" alt="" border="0" width="26" height="20"></a></th>
+</tr></table>
+<table bgcolor="#FFF8DC" width="100%" cellpadding="4" cellspacing="0" border="0">
+<tr>
+<td style="border-left: 1px solid #808080; border-right: 1px solid #808080" width="100%"><span class="form_title2"><a class="menu2" href="http://www.fit.vutbr.cz/FIT/db/"><img src="http://www.fit.vutbr.cz/images/homeblue.gif" alt="" align="bottom" border="0">IS FIT</a> &gt; <a class="menu2" href="http://www.fit.vutbr.cz/FIT/db/vyuka/">Study</a> &gt; <a class="menu2" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/">Učitelé</a> &gt; <a class="menu2" href="http://www.fit.vutbr.cz/study/courses/ICP/public/course.php?init_view=0">Otevřené předměty</a> &gt; <a class="menu2" href="http://www.fit.vutbr.cz/study/courses/ICP/public/course.php?id=8655">IJA/2012L</a> &gt; </span><span class="form_title">IJA/2012L Wiki</span>
+</td>
+<td style="border-right: 1px solid #808080" onclick="mouseClick(event, 'index.php')" align="right" nowrap>&nbsp;<a class="menu2" href="http://www.fit.vutbr.cz/study/courses/ICP/public/index.php">Back to index</a>&nbsp;</td>
+</tr>
+</table><table class="menu2" bgcolor="#0063A5" width="100%" cellpadding="1" cellspacing="0" border="0" bordercolor="black">
+<tr><th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/course.php?id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/course.php?id=8655">&nbsp;&nbsp;Předmět&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/course-r.php?id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/course-r.php?id=8655">&nbsp;&nbsp;Rozvrh&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/course-s.php?id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/course-s.php?id=8655">&nbsp;&nbsp;Zapsaní&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/course-items.php?id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/course-items.php?id=8655">&nbsp;&nbsp;Termíny&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/course-c.php?id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/course-c.php?id=8655">&nbsp;&nbsp;Úvazek&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/course-k.php?id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/course-k.php?id=8655">&nbsp;&nbsp;Anotace&nbsp;&nbsp;</a></th>
+<th class="menu2" style="cursor: default"><span class="menu_title">&nbsp;&nbsp;Wiki&nbsp;&nbsp;</span></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/course-files.php?id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/course-files.php?id=8655">&nbsp;&nbsp;Soubory&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/phorum-list.php?id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/phorum-list.php?id=8655">&nbsp;&nbsp;Fóra&nbsp;&nbsp;</a></th>
+<th class="menu" onclick="mouseClick(event, '/FIT/db/vyuka/ucitel/course-hx.php?id=8655')" onmouseover="mouseOver(this)" onmouseout="mouseOut(this)"><a class="menu" href="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/course-hx.php?id=8655">&nbsp;&nbsp;Dotazníky&nbsp;&nbsp;</a></th>
+</tr></table>
+<table border="1" bgcolor="#e8f0f0" bordercolor="#808080" cellpadding="4" cellspacing="0" width="100%">
+<tr><td><form method="post" action="http://www.fit.vutbr.cz/FIT/db/vyuka/ucitel/cwk.php" name="dbform" onsubmit="return form_submit()" enctype="multipart/form-data">
+<table border="0" cellpadding="2" cellspacing="0" align="center" width="100%">
+<input type="hidden" name="form_v0" value="eysselt">
+<tr><td valign="bottom" nowrap colspan="2">Kód: 8655<input type="hidden" name="form_v1" value="8655">
+</td>
+<td align="right" valign="bottom" nowrap colspan="3"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/course.php?id=8655">Zpět na předmět</a></td>
+</tr><input type="hidden" name="form_v3" value="IJA">
+<input type="hidden" name="form_v4" value="2012">
+<input type="hidden" name="form_v5" value="L">
+<input type="hidden" name="form_v6" value="105">
+<tr><td valign="bottom" colspan="5"></form>
+<table width="100%"><tr valign="top"><td>
+<div class="leftpane">
+    <div class="home">
+[[<a class="internal" href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:&amp;id=8655" name="top" id="wiki__top" accesskey="h" title="[H]">IJA Home</a>]]
+    </div>
+    <div id="toolbar" class="toolbar">
+   <div class="tb_main">
+
+<p>
+
+Navigation
+</p>
+
+<ul>
+<li class="level1"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Main_Page&amp;id=8655" class="internal" title="IJA:Main Page">Main Page</a></li>
+<li class="level1"><span class="curid"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=recent&amp;id=8655" class="internal" title="IJA:Zadání projektu">Recent changes</a></span></li>
+<li class="level1"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=Help:Main_Page&amp;id=8655" class="internal" title="Help:Main Page">Help</a></li>
+</ul>
+
+<p>
+
+<p>Page</p><div class="tb_box"><form action="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;id=8655" class="search" id="form_search" method="get"><div class="searchform">
+<input type="hidden" name="id" value="8655">
+<input type="text" autocomplete="off" id="qsearch" accesskey="f" name="search" class="text_search" title="Enter search text" value>
+<input type="submit" name="dogo" value="Go" class="button" title="Go"> <input type="submit" name="dosearch" value="Search" class="button" title="Search">
+</div></form>
+</div>
+
+</p>
+
+<p>
+
+Toolbox
+</p>
+
+<ul>
+<li class="level1"><span class="curid"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=backlink&amp;id=8655" class="internal" title="IJA:Zadání projektu">What links here</a></span></li>
+<li class="level1"><span class="curid"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=upload&amp;ns=IJA&amp;id=8655" class="internal" title="IJA:Zadání projektu">Upload file</a></span></li>
+<li class="level1"><span class="curid"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=fileinfo&amp;ns=IJA&amp;list=1&amp;id=8655" class="internal" title="IJA:Zadání projektu">File list</a></span></li>
+<li class="level1"><span class="curid"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=index&amp;id=8655" class="internal" title="IJA:Zadání projektu">Page index</a></span></li>
+<li class="level1"><span class="curid"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=history&amp;id=8655" class="internal" title="IJA:Zadání projektu">History</a></span></li>
+</ul>
+</div>   </div>
+</div>
+</td><td width="100%">
+<div class="rightpane">
+    <div class="bar" id="bar_top">
+    <ul class="bar_menu">
+<li><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=show&amp;rev=0&amp;id=8655" class="selected" title="Page" rel="nofollow">Page</a></li><li><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=edit&amp;rev=0&amp;id=8655" title="Edit" rel="nofollow">Edit</a></li><li><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=history&amp;id=8655" title="History" rel="nofollow">History</a></li><li><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=recent&amp;id=8655" title="Recent" rel="nofollow">Recent</a></li><li><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;action=subscribe&amp;id=8655" title="Watchlist" rel="nofollow">Watchlist</a></li>  </ul>
+    </div>
+    <div class="page">
+<!-- wikipage start -->
+<h1>IJA:Zadání projektu</h1>
+<p>
+
+<b>Zadání:</b> Navrhněte a implementujte aplikaci pro hru Dáma.
+<br>
+<br>
+
+</p>
+
+<p>
+
+<b>Pravidla hry</b>
+</p>
+
+<ul>
+<li class="level1">hraje se na šachovnici 8x8 se střídající se barvou polí (černá a bílá) a to pouze na černých polích; sloupce jsou označeny písmeny (a-h), řádky jsou označeny čísly (1-8); každé pole je identifikováno dvojicí <i>písmeno číslo</i> (např. <i>a1</i>); na pozici <i>a1</i> je černá barva</li>
+<li class="level1">před zahájením partie je dvanáct černých kamenů umístěno na polích a7, b6, b8, c7, d6, d8, e7, f6, f8, g7, h6, h8 a dvanáct bílých kamenů na polích a1, a3, b2, c1, c3, d2, e1, e3, f2, g1, g3, h2; pole na 4. a 5. řadě desky jsou volná</li>
+<li class="level1">každý tah je tvořen krokem bílého a krokem černého; bílý vždy začíná</li>
+<li class="level1">kámen se pohybuje vždy jen dopředu po diagonále z jednoho pole na druhé volné pole další řady</li>
+<li class="level1">pokud kámen dosáhne základní řady na soupeřově straně (tj. bílý 8. řady a černý 1. řady), stává se z něj dáma; dáma se přesunuje dozadu a dopředu na libovolná volná pole diagonály, na které se nachází</li>
+<li class="level1">braní figur
+<ul>
+<li class="level2">braní soupeřovy figury je povinné, kamenem se provádí jen dopředu, dámou lze brát i dozadu; braní nebo přeskakování vlastních figur je zakázané.</li>
+<li class="level2">braní kamenem: jestliže se kámen nachází na diagonále v sousedství soupeřovy figury, za kterou je volné pole, je povinen ji přeskočit, obsadit toto volné pole a odstranit přeskočenou soupeřovu figuru z desky</li>
+<li class="level2">braní dámou: jestliže se dáma nachází na stejné diagonále se soupeřovou figurou, za kterou je jedno nebo více volných polí, je povinna tuto figuru přeskočit, zaujmout libovolné volné pole na diagonále za ní a přeskočenou figuru odstranit z desky.</li>
+<li class="level2">vícenásobné braní: jestliže se po přeskočení soupeřovy figury nachází moje figura opět v sousedství soupeřovy figury, za kterou je volné pole, přeskakuje a bere i tuto (příp. další) figury</li>
+<li class="level2">podrobná pravidla viz např. <a href="http://dama.blgz.cz/" class="external" title="http://dama.blgz.cz/" rel="nofollow">http://dama.blgz.cz/</a> (není třeba implementovat pravidla přesně, postačuje výše uvedené)</li>
+</ul>
+</li>
+<li class="level1">základní notace pro zápis partie
+<ul>
+<li class="level2">pořadové číslo tahu, tah bílého, tah černého</li>
+<li class="level2">tah bílého nebo černého se zapisuje ve formátu odkud-kam (např. <tt>c3-b4</tt>)</li>
+<li class="level2">pokud došlo při přemístění figury k braní, zapíše se místo - znak x (např. <tt>e5xg3</tt>)</li>
+<li class="level2">příklad zápisu celého tahu: <tt>1. c3-b4 b6-c5</tt></li>
+</ul>
+</li>
+</ul>
+
+<p>
+
+<br>
+
+</p>
+
+<p>
+
+<b>Základní požadavky na aplikaci</b>
+</p>
+
+<ul>
+<li class="level1">základní hra
+<ul>
+<li class="level2">vytvoření nové partie</li>
+<li class="level2">střídaní tahů bílý - černý</li>
+<li class="level2">provádění automatického zápisu partie v definované notaci; zápis se ihned objevuje ve vyhrazeném prostoru</li>
+<li class="level2">možnost uložení partie (ukončené i rozehrané) a načtení uložené partie - aplikace umí uložit partii ve vlastním formátu XML a v základní notaci; je možné rozšířit aplikaci i o jiné notace</li>
+</ul>
+</li>
+<li class="level1">možnost přehrání partie 
+<ul>
+<li class="level2">zápis přehrávané partie je možné načíst ze souboru nebo zadat přímo v aplikaci v základní notaci (případně dalších notacích)</li>
+<li class="level2">varianty přehrávání: krok po kroku, do určitého tahu, možnost vrátit se v krocích zpět</li>
+<li class="level2">při přehrávání partie je možné zadat časovou prodlevu mezi zobrazovanými tahy</li>
+<li class="level2">přehrávání partie je možné kdykoliv zastavit nebo zrušit </li>
+<li class="level2">je možné přehrávat více partií současně</li>
+</ul>
+</li>
+<li class="level1">hráči v partii (varianty)
+<ul>
+<li class="level2">obě strany hraje jeden uživatel v rámci jednoho klienta</li>
+<li class="level2">je možné jedné straně (bílý, černý) přiřadit "umělou inteligenci" - hrát bude počítač, rozhodovací strategie může být libovolná (třeba i náhodná)</li>
+<li class="level2">za každou stranu vystupuje jiný klient (peer-to-peer, tj. bez serveru)
+<ul>
+<li class="level3">uživatel na straně klienta 1 (iniciátor partie) zadá IP adresu a číslo portu, na kterém je klient 2</li>
+<li class="level3">klient 2 (resp. uživatel pracující s tímto klientem) musí akceptovat nabídku partie</li>
+<li class="level3">iniciátor nabízí partii novou nebo uloženou a přiřazuje stranám barvy (černá, bílá)</li>
+<li class="level3">kterákoliv strana může partii kdykoliv uložit (i opakovaně) nebo ukončit</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="level1">na žádost získat nápovědu pro hráče: zobrazení možných variant následujícího tahu a možných reakcí protihráče</li>
+<li class="level1">hlídání korektnosti tahů; v případě chyby či opomenutí (např. braní) na to aplikace upozorní a nabídne nápovědu možného tahu</li>
+<li class="level1">grafické rozhraní (GUI) obsahující zejména menu, hrací desku (případně desky při více rozehraných partiích) a prostor pro zápis a zobrazení partie</li>
+<li class="level1">graficky musí být jasně odlišitelná barva polí, barva figur a to, zda se jedná o kámen nebo dámu</li>
+</ul>
+
+<p>
+
+<br>
+
+</p>
+
+<p>
+
+<b>Součást odevzdání</b>
+</p>
+
+<ul>
+<li class="level1">připravte alespoň dvě uložené partie a alespoň jednu partii v základní notaci pro přehrání; při otevření příslušného menu se nabídne implicitní úložiště, které obsahuje zmiňované uložené partie</li>
+</ul>
+
+<p>
+
+<br>
+
+</p>
+
+<p>
+
+<b>Minimum pro získání zápočtu</b>
+</p>
+
+<ul>
+<li class="level1">návrh a implementace všech základních požadavků </li>
+</ul>
+
+<p>
+
+<br>
+
+</p>
+
+<p>
+
+<b>Doporučení</b>
+</p>
+
+<ul>
+<li class="level1">zamyslete se nad použitím vhodných návrhových vzorů</li>
+<li class="level1">použijte vhodnou knihovnu pro zpracování XML dokumentů (C++: Qt, Java: <a href="http://dom4j.org/" class="external" title="http://dom4j.org/" rel="nofollow">http://dom4j.org/</a> apod.)</li>
+</ul>
+
+<p>
+
+<br>
+
+</p>
+
+<p>
+
+<b><i>Důležitá poznámka:</i></b> <i>Zadání definuje podstatné vlastnosti aplikace, které musí být splněny. Předpokládá se, že detaily řešení si doplní řešitelské týmy.</i>
+<br>
+
+</p>
+<div class="clearer"></div>   <!-- wikipage end -->
+    </div>
+
+    <div class="footer">
+      <div class="wiki_top"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/ICP-PRJ-zadani-2013-ija.html#top" onclick="window.scrollTo(0, 0)" title="Top">Top</a>
+      </div>
+      <div class="meta">
+        <div class="user">
+    </div>
+      <div class="doc">Page id: 106, revision: 1382, modified: 2013-02-14 17:25:18 by koci</div>
+      </div>
+    </div>
+</div>
+</td></tr>
+</table>
+<form name="dbform2" method="post">
+</td>
+</tr><input type="hidden" name="form_signature" value="0:update_login,">
+<input type="hidden" name="form_key" value="8655">
+<input type="hidden" name="new_sid" value="0">
+</table>
+</form>
+<script type="text/javascript">
+var form_dbform_ok=true;
+
+function FormEnter(field, event)
+{
+    var key;
+    if (event.keyCode) key = event.keyCode;
+    else
+    if (event.which) key = event.which;
+    else key = event.charCode;
+    if (key == 13) {
+	var i;
+	for (i = 0; i < field.form.elements.length; i++) {
+	    if (field == field.form.elements[i]) {
+		do { i = (i+1)%field.form.elements.length;
+		} while (field.form.elements[i].type == 'hidden' ||
+		    field.form.elements[i].type == 'submit');
+		field.form.elements[i].focus();
+		return false;
+	    }
+	}
+	return true;
+    }
+}
+function FormEnterSubmit(field, event)
+{
+    var key;
+    if (event.keyCode) key = event.keyCode;
+    else
+    if (event.which) key = event.which;
+    else key = event.charCode;
+    if (key == 13) {
+	field.click();
+	return false;
+    }
+    return true;
+}
+function doNothing()
+{
+    form_changed();
+}
+function validate(field, title, ereg, emsg)
+{
+    if (!field || !ereg) return true;
+    ereg = unescape(ereg); emsg = unescape(emsg);
+    var re = new RegExp(ereg, 'g');
+    if (!re.test(field.value)) {
+	field.focus();
+	if (field.style) { 
+	    field.style.backgroundColor='#ffc0c0';
+	    field.style.color='black';
+	}
+	str = 'Chybná hodnota v poli formuláře:\n'+emsg+'\n'+title+'='+field.value;
+	alert(str);
+	form_dbform_ok = false;
+	return false;
+    }
+    return true;
+}
+function form_validate(button)
+{
+    var ver;
+    ver=parseInt(navigator.appVersion);
+    if (ver<4) return true;
+    if (typeof editboxes != 'undefined') EditSubmit();
+    
+    return true;
+}
+function form_changed()
+{
+    var i;
+    if (!form_change) {
+	for (i = 0; i < document.links.length; i++) {
+	    if (document.links[i].onclick == null) {
+		document.links[i].onclick = check_change;
+	    }
+	}
+    }
+    form_change = true;
+}
+function form_save()
+{    return true;
+}
+function form_new()
+{
+    form_save();
+    if (form_change) {
+	form_dbform_ok = false;
+	return false;
+    }
+    return true;
+}
+function check_change()
+{
+    str = 'Některé pole ve formuláři bylo změněno,\npřed pokračováním musíte formulář uložit!\nChcete opustit tento formulář a změny zahodit?';
+    return confirm(str);
+}
+var iframe_sel = null;
+function form_select(tag, url, hi)
+{
+    var orig;
+    if (iframe_sel != null && iframe_sel.parentNode != null) iframe_sel.parentNode.removeChild(iframe_sel);
+    form_save();
+    iframe_sel = document.createElement('iframe');
+    iframe_sel.src = url;
+    if (typeof tag == 'string') orig = document.getElementById(tag);
+    else orig = tag;
+    orig.style.display = 'none';
+    iframe_sel.scrolling = 'auto';
+    iframe_sel.style.width = (orig.parentNode.offsetWidth-20)+'px';
+    iframe_sel.style.height = hi+'px';
+    iframe_sel.style.border = '1px solid #808080';
+    iframe_sel.style.backgroundColor = 'white';
+    orig.parentNode.insertBefore(iframe_sel,orig.nextSibling);
+    window.scrollBy(0, hi/2);
+    return false;
+}
+
+function form_submit()
+{
+    var ver;
+    ver=parseInt(navigator.appVersion);
+    if (ver<4) return true;
+    form_ret = form_dbform_ok;
+    form_dbform_ok = true;
+    return form_ret;
+}</script>
+</td></tr><tr><td bgcolor="#ADD8E6"><p class="noprint" align="center"><a href="http://www.fit.vutbr.cz/study/courses/ICP/public/index.php">Zpět na index</a></p></td></tr></table><div class="noprint">
+<address class="noprint">© Fakulta informačních technologií VUT v Brně, Božetěchova 2, 612 66 Brno<br>Připomínky zasílejte na adresu <a href="mailto:lampa@fit.vutbr.cz">lampa@fit.vutbr.cz</a></address></div>
+</body>
+</html><p class="noprint"><font size="1">Real 43.1 ms, User 35.1 ms, System 7.1 ms</font>
+<!-- This document saved from http://www.fit.vutbr.cz/study/courses/ICP/public/ICP-PRJ-zadani-2013-ija.html -->

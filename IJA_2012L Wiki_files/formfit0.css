@@ -1,0 +1,33 @@
+body,td,th,.text {
+	font-family : Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size : 10pt;
+	color : Black;
+	text-decoration : none;
+}
+TABLE {
+	border-collapse:collapse;
+}
+
+form {
+	display : inline;
+}
+A:link,A:visited {
+	color : #3f4f5f;
+	font-family : Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-weight : bold;
+	text-decoration : underline;
+}
+A:HOVER {
+	color : white;
+	font-weight : bold;
+	text-decoration : underline;
+	background-color: #3f4f5f;
+}
+h1 {
+	font-family : Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size : 16pt;
+	margin-top : 8pt;
+	margin-left : 8pt;
+	color : #0000c0;
+	font-weight : bold;
+}

@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<head>
+    
+    <meta http-equiv="Content-language" content="cs">
+    <title>ICP: Projekt </title>
+</head>
+<body>
+<h1>ICP: zadání týmového projektu</h1>
+<hr>
+<p> <b> Toto je prototyp 2013-02-20, bude se ještě mírně upravovat.</b>
+
+<!--
+<HR>
+-->
+
+<h2>Název projektu</h2>
+<b>Navrhněte a implementujte aplikaci pro hru Dáma</b>
+
+<h2>Podrobnosti k zadání</h2>
+
+<a href="http://www.fit.vutbr.cz/study/courses/ICP/public/ICP-PRJ-zadani-2013-ija.html"> Základní zadání je shodné s předmětem IJA</a>
+<a href="https://wis.fit.vutbr.cz/FIT/db/vyuka/ucitel/cwk.php?title=IJA:Zad%E1n%ED_projektu&amp;id=8655">(originál)</a>
+
+<h2>Další požadavky</h2>
+
+<ul>
+<li> Zadání definuje podstatné vlastnosti aplikace, které musí být splněny.
+Předpokládá se, že detaily řešení si doplní řešitelské týmy.
+
+<li> Při návrhu postupujte tak, aby výsledný program byl dobře použitelný.
+Hodnotit se bude nejen to, zda splňuje výše uvedené požadavky, ale také JAK je
+splňuje.
+
+<li> Návrh musí oddělit vlastní model aplikace od GUI (navrhněte vhodné
+rozhraní). Demonstrujte to vytvořením aplikace "dama2013-cli" s použitím
+stejných (přeložených) modulů bez použití toolkitu pouze s textovým rozhraním
+(použijete pouze ISO C++ streamy cin/cout na terminál ve stylu příkazové řádky).
+
+<li> Návrh programu zdokumentujte ve zdrojovém kódu ve formátu pro program "doxygen".
+
+<li> Používejte vhodné návrhové vzory (Design Patterns) - viz literatura.
+
+<li> Pro vytváření menu, dialogů a dalších komponent grafického uživatelského
+     rozhraní (GUI) použijte toolkit <b>FLTK 1.3</b> nebo <b>QT 4.7</b>
+     (nainstalováno v učebnách a na serveru "merlin").
+     Pokud pro vývoj použijete verzi novější/starší než je na učebnách,
+     předpokládám, že zajistíte zpětnou/dopřednou kompatibilitu vašich
+     programů. (V případě, že použijete Qt 5.0, počítejte s nutností předvedení
+     překladu/sestavení na vašem notebooku. Toto se nedoporučuje.)
+
+     <br> Protože toolkity jsou přenositelné na více platforem, měly by vaše
+     programy fungovat minimálně na Linuxu i na Windows.  (Nejen Java umožňuje
+     psaní přenositelných aplikací.)
+     Je jedno na které platformě proběhne vývoj aplikací, jen dbejte na
+     pravidla psaní přenositelných programů. <br>
+     (Testovat se bude na Linuxu = server merlin, ale Makefile nesmí být
+      závislý na konkrétním adresáři s lokální instalací toolkitu.)
+
+     <br> Na vytvoření GUI dialogů a menu můžete použít interaktivní editory/generátory.
+
+<li> Zkuste použít novější překladač a C++11.
+     Knihovny z BOOST použít můžete, ale použité soubory přibalte.
+
+<li> Programy budou vytvořeny zadáním příkazu "make" v adresáři s rozbalenými
+zdrojovými kódy projektu (Pozor - bude se automaticky překládat).  Musíte
+vytvořit soubor Makefile, který nesmí obsahovat absolutní cesty k souborům.
+Výsledný program se bude jmenovat "dama2013" a půjde spustit použitím "make run".
+
+<li>Součástí projektu bude programová dokumentace vytvořená programem Doxygen
+(konfigurační soubor nastavte na HTML výstup se zahrnutím zdrojových textů:
+SOURCE_BROWSER = YES).
+Dokumentace se vygeneruje automaticky (= nezabalovat do archivu) při zadání
+"make doxygen" a bude uložena v podadresáři doc.
+
+</ul>
+
+<h2>Poznámky k odevzdávání</h2>
+<ul>
+
+<li> Termín odevzdání je uveden v IS.
+
+<li> Řešení zabalené ve formátu ZIP nebo .tar.gz odevzdá pouze vedoucí týmu do
+     IS a to s dostatečným předstihem před uzávěrkou.
+     (Nikdo nebude psát, že neodevzdal, protože *** a posílat to poštou.)
+
+<li> Odevzdaný archiv obsahuje minimálně tuto adresářovou strukturu:
+<pre>
+xnamevedouciho/src/*       - zdrojové texty
+xnamevedouciho/examples/*  - příklady (pro testy)
+xnamevedouciho/doc/        - dokumentace (bude později generován: "make doxygen")
+xnamevedouciho/README.txt  - základní přehled o co jde, Autoři, poznámky, ...
+xnamevedouciho/Makefile    - zavolá rekurzivně make na src/Makefile, případně
+                             na generování dokumentace atd
+</pre>
+
+<li> Neodevzdávejte nic, co lze vytvořit pomocí "make"
+     (spustitelné programy ani dokumentaci, kterou lze vygenerovat použitím "make doxygen").
+
+     <br> Poznámka: Příkaz "make clean" všechny produkty překladu smaže,
+     "make pack" vytvoří archiv pro odevzdání v rodičovském adresáři -
+     zkontrolujte, zda obsahuje vše potřebné rozbalením v prázdném adresáři a
+     překladem/spuštěním.
+
+<li> Všechny zdrojové soubory musí obsahovat na začátku komentář se jmény
+     autorů daného modulu, popisem obsahu modulu, atd.
+     Z komentářů by také mělo být patrné, které části byly napsány ručně a
+     které vygenerovány automaticky.
+
+</ul>
+
+
+
+<h2>Poznámky k hodnocení </h2>
+<ul>
+<li> Projekt je hodnocen na stupnici 0-100 procent/bodů. 
+
+<li> Po ohodnocení <b>může</b> dojít k přepočtu bodů na jednotlivé
+členy týmu podle návrhu vedoucího týmu v souboru BODY.txt (formát:
+"xname99=AA% \n xname88=BB% \n komentář", součet AA+BB=100, <b>POZOR: pro
+rovnoměrné rozdělení AA=BB=50% tento soubor neexistuje a je to preferovaná
+možnost</b>).
+
+<li>Hodnocení zahrnuje kvalitu OO návrhu, kvalitu implementace v C++, dodržování
+stylu psaní programu (odsazování, kvalita komentářů, vhodné identifikátory)
+a především funkčnost programu. Pokud budou ve zdrojových textech chybět
+podstatné komentáře (zvláště jména autorů), bude projekt hodnocen 0b.
+
+<li> <b>POZOR:</b> 
+<br> Pokud nepůjde přeložit příkazem make = 0b
+     nebo předvedete na svém notebooku a vysvětlíte kde byl problém,
+<br> pokud nebudou komentáře se jmény autorů = 0b.
+<br> Zcela nevhodně formátovaný a nečitelný kód = 0b.
+<br> Plagiáty atd. = 0b + disciplinární komise.
+
+</ul>
+
+<hr>
+<address>
+    Poslední modifikace: <!-- begin flastmod -->
+20. února 2013<!-- end --> 
+<br>
+Pokud naleznete na této stránce chybu, oznamte to dopisem na adresu
+peringer AT fit.vutbr.cz
+</address>
+</body>
+</html>
+
+
+<!-- This document saved from http://www.fit.vutbr.cz/study/courses/ICP/public/ICP-PRJ-zadani.html -->

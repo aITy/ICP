@@ -1,0 +1,89 @@
+user input
+  new game
+    lokalni
+      human vs AI + vyber barvy
+      human vs human + vyber barvy
+    vzdalena
+      iniciator nabizi zalezeni hry (IP + port)
+        druha strana musi nabidku akceptovat
+      iniciator vybere new_game nebo load_game a barvu (cerna/bila)
+        druha strana to musi akceptovat
+        pokud nebude souhlasit zadne ze jmen v load_game s aktualnim
+          nickem, tak se to musi uzivatele zeptat, za ktereho z tech 2
+          z load_game se bude vydavat
+      kdokoliv z obou muze kdykoliv ukladat a ukoncit partii
+  load_game (ze souboru nebo uzivatelsky_textovy_vstup)
+    play/pause (pokracovani ve hre...)
+    replay
+      stepping (jmp beginning/end/previous/next)
+      auto (with some delay)
+  move (kontrola, zdali muze vubec byt tah proveden a informovani hrace o chybe)
+    zkusit udelat reverzibilni prirustky
+  exit_game (== save_game + zavreni_tabu_s_hracim_polem)
+  save_game (dialog na vyber souboru)
+  jmena hracu (nepovinne, ale menitelne; i pro AI mozne zmenit)
+
+partie mohou byt hrany/prehravany soucasne (treba v tabech)!
+  tzn. asi samostatny objekt "game"
+
+program flow
+  pripoji se na nahodny port jako server a ten vypise uzivateli
+    TCP cekani na prijem/odesilani zpravy
+  ceka na uzivatelsky vstup (GUI: resi QT; CLI: proste while cyklus)
+
+protokol (musime resit i hru vice hracu => ID; protoze je logika na obou
+    stranach stejna, neni nutne zasilat ukoncovaci zpravu po ukonceni
+    partie diky MOVE)
+  A: unikatni_nahodne_ID_pevne_sirky INVITE nick1_optionally_with_spaces
+  B: ID INVITE_ACCEPT nick2
+     ID INVITE_REJECT
+  A: ID GAME black|white new
+     ID GAME black|white load xml_s_loadovanou_hrou
+  B: ID GAME_ACCEPT
+     ID GAME_REJECT
+  <ten_kdo_je_na_rade_dela_tah>: ID MOVE XY_old XY_new
+  <kdokoliv>: ID EXIT
+
+XML (musi zachovavat poradi pri parsovani!)
+  <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <!-- standalone because we have no DTD for it -->
+  <draughts version="1.0">
+    <game state="paused/finished" type="network/local" ?host="hostname/IPv4/IPv6">
+    <player name="abc" type="black">
+      <move srcx="f" srcy="6" dstx="i" dsty="4">
+      <move srcx="d" srcy="4" dstx="g" dsty="8">
+      <move srcx="e" srcy="5" dstx="h" dsty="3">
+      <move srcx="a" srcy="1" dstx="d" dsty="5">
+      <move srcx="c" srcy="3" dstx="f" dsty="7">
+      <move srcx="b" srcy="2" dstx="e" dsty="6">
+    </player>
+    <player name="def" type="white"/>
+      <move srcx="f" srcy="6" dstx="i" dsty="4">
+      <move srcx="d" srcy="4" dstx="g" dsty="8">
+      <move srcx="e" srcy="5" dstx="h" dsty="3">
+      <move srcx="a" srcy="1" dstx="d" dsty="5">
+      <move srcx="c" srcy="3" dstx="f" dsty="7">
+    </player>
+  </draughts>
+
+server
+  http://doc.trolltech.com/4.3/network-fortuneserver.html
+  Qt sockets APIs could make connections some different, but the basis of
+    creating a server are:
+  1.Create a socket.
+  2.Make socket listen to certain port.
+  3.Wait new client request.
+  4.Make socket copy for the new client.
+  At this point, there are various ways to performing read/write tasks to
+    new socket: forking process, threads or just use SIGNAL/SLOT. Be carefull,
+    SIGNALS doesn't says to SLOTS the socket in use. So, if you have some
+    state dependent to socket, you will be in trouble. You shall connect any
+    socket signal to a different slot. Easy to do with classes.
+  As you can see in step 4, you make a copy of incoming connections socket.
+    So, you won't use it to read/write data and will keep waiting for next
+    conection.
+
+client
+  vzdy vytvori novy socket na nahodnem portu a pres ten kontaktuje server
+
+vim: set ft=dosbatch autoindent:

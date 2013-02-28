@@ -1,0 +1,84 @@
+
+
+
+// FIXME
+//   rock/lady direction
+//   ...
+
+class Action {
+  protected:
+    QString l;  // label
+    enum _type { move, ... } action_t;  // public???
+  public:
+    uint8 srcx, srcy;
+    uint8 dstx, dsty;
+    Action(QString _label, uint8 _sx, uint8 _sy, uint8 _dx, uint8 _dy) :
+      l = _label, srcx = _sx, srcy = _sy, dstx = _dx, dsty = _dy { }
+    QString get_label() { return s; }
+}
+
+class Logger {
+  protected:
+    FILE &f;  // QtFile???
+  public:
+    int open(QString &s) {
+      try
+        f = QtFile.open(s);
+      except
+        return 1;
+
+      f.append("<log>\n");
+      return 0;
+    }
+    //FIXME save/restore current game state
+    int log(Action a, Player p) {
+      f.append("<move "
+          "player=\"" + p.type_label() + "\" "
+          "action=\"" + a.label() + "\" "
+          "srcx=\"" + a.srcx.to_str() + "\" "
+          "srcy=\"" + a.srcy.to_str() + "\" "
+          "dstx=\"" + a.dstx.to_str() + "\" "
+          "dsty=\"" + a.dsty.to_str() + "\">\n");
+    }
+    ~Logger() {
+      f.append("</log>\n");
+      f.close();
+    }
+}
+
+class Rock {
+  protected:
+    enum state { rock; lady };
+    Player p;  // black, white
+  public:
+    void move(dst) {
+      t
+    }
+}
+
+class Fairway {
+  protected:
+    Rock& arr[8][8] = { 0 }
+    move_visual() {
+      // CLI or GUI stuff (FIXME: #ifdef or runtime?)
+    }
+    friend void Rock::_move() {
+    }
+  public:
+    move() {
+      // some stuff ...
+
+      arr[ax][ay]._move();
+    }
+}
+
+class Player {
+  protected:
+    enum type { black, white } t;
+    // FIXME
+    enum game_type { human, computer, replay }
+    // FIXME replay params (delay between moves; bool paused; ...)
+  public:
+    Player(enum type _t) : t = _t { }
+    QString type_name() { return (t == black) ? "black" : "white"; }
+}
