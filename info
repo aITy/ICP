@@ -26,11 +26,6 @@ user input
 partie mohou byt hrany/prehravany soucasne (treba v tabech)!
   tzn. asi samostatny objekt "game"
 
-program flow
-  pripoji se na nahodny port jako server a ten vypise uzivateli
-    TCP cekani na prijem/odesilani zpravy
-  ceka na uzivatelsky vstup (GUI: resi QT; CLI: proste while cyklus)
-
 protokol (musime resit i hru vice hracu => ID; protoze je logika na obou
     stranach stejna, neni nutne zasilat ukoncovaci zpravu po ukonceni
     partie diky MOVE)
