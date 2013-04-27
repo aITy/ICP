@@ -30,12 +30,12 @@ protokol (musime resit i hru vice hracu => ID; protoze je logika na obou
     stranach stejna, neni nutne zasilat ukoncovaci zpravu po ukonceni
     partie diky MOVE)
   A: unikatni_nahodne_ID_pevne_sirky INVITE nick1_optionally_with_spaces
-  B: ID INVITE_ACCEPT nick2
+  B: ID INVITE_ACCEPT ID2 nick2
      ID INVITE_REJECT
-  A: ID GAME black|white new
-     ID GAME black|white load xml_s_loadovanou_hrou
-  B: ID GAME_ACCEPT
-     ID GAME_REJECT
+  A: ID2 GAME black|white new
+     ID2 GAME black|white load xml_s_loadovanou_hrou
+  B: ID2 GAME_ACCEPT
+     ID2 GAME_REJECT
   <ten_kdo_je_na_rade_dela_tah>: ID MOVE XY_old XY_new
   <kdokoliv>: ID EXIT
 
@@ -44,21 +44,23 @@ XML (musi zachovavat poradi pri parsovani!)
     <!-- standalone because we have no DTD for it -->
   <draughts version="1.0">
     <game state="paused/finished" type="network/local" ?host="hostname/IPv4/IPv6">
-    <player name="abc" type="black">
-      <move srcx="f" srcy="6" dstx="i" dsty="4">
-      <move srcx="d" srcy="4" dstx="g" dsty="8">
-      <move srcx="e" srcy="5" dstx="h" dsty="3">
-      <move srcx="a" srcy="1" dstx="d" dsty="5">
-      <move srcx="c" srcy="3" dstx="f" dsty="7">
-      <move srcx="b" srcy="2" dstx="e" dsty="6">
-    </player>
-    <player name="def" type="white"/>
-      <move srcx="f" srcy="6" dstx="i" dsty="4">
-      <move srcx="d" srcy="4" dstx="g" dsty="8">
-      <move srcx="e" srcy="5" dstx="h" dsty="3">
-      <move srcx="a" srcy="1" dstx="d" dsty="5">
-      <move srcx="c" srcy="3" dstx="f" dsty="7">
-    </player>
+    <players>
+      <player type="black">name1</player>
+      <player type="white">name2</player>
+    </players>
+    <moves>
+      <move player="black" srcx="f" srcy="6" dstx="i" dsty="4">
+      <move player="white" srcx="d" srcy="4" dstx="g" dsty="8">
+      <move player="black" srcx="e" srcy="5" dstx="h" dsty="3">
+      <move player="white" srcx="a" srcy="1" dstx="d" dsty="5">
+      <move player="white" srcx="c" srcy="3" dstx="f" dsty="7">
+      <move player="white" srcx="b" srcy="2" dstx="e" dsty="6">
+      <move player="black" srcx="f" srcy="6" dstx="i" dsty="4">
+      <move player="white" srcx="d" srcy="4" dstx="g" dsty="8">
+      <move player="black" srcx="e" srcy="5" dstx="h" dsty="3">
+      <move player="black" srcx="a" srcy="1" dstx="d" dsty="5">
+      <move player="white" srcx="c" srcy="3" dstx="f" dsty="7">
+    </moves>
   </draughts>
 
 server
