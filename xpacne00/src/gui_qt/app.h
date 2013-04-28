@@ -35,7 +35,6 @@
 #define TERM_C_RESET       _TERM_C_START _TERM_C_RESET  _TERM_C_END
 #define TERM_BG_BLACK      _TERM_C_START _TERM_C_RESET ";4" _TERM_C_BLACK _TERM_C_END
 #define TERM_BG_WHITE      _TERM_C_START _TERM_C_RESET ";4" _TERM_C_WHITE _TERM_C_END
-#define TERM_BG_TIP        _TERM_C_START _TERM_C_RESET ";4" _TERM_C_GREEN _TERM_C_END
 #define TERM_FG_MEN_BLACK  _TERM_C_START _TERM_C_DIM ";3" _TERM_C_BLUE   _TERM_C_END "o"
 #define TERM_FG_MEN_WHITE  _TERM_C_START _TERM_C_DIM ";3" _TERM_C_RED _TERM_C_END "o"
 #define TERM_FG_KING_BLACK _TERM_C_START _TERM_C_DIM ";3" _TERM_C_BLUE   _TERM_C_END "?"
@@ -49,14 +48,13 @@ class App : public QObject {
   //private: only me
   //protected: me and my descendants
   //public: everyone
-private:
-  QCoreApplication &par;
-
 public:
-  App(QCoreApplication &);
+  QFile file_stdin;
+  App(QCoreApplication *);
 
 public Q_SLOTS:
   void run(void);
+  void gotConnected();
 
 Q_SIGNALS:
   void finished(void);

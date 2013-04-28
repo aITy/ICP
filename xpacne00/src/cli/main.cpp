@@ -13,13 +13,9 @@ int main(int argc, char *argv[]) {
   //QApplication();
   QCoreApplication app(argc, argv);
 
-  // the following is essential, see
+  // all the following signal-slot handling is essential - see
   // http://stackoverflow.com/questions/4180394/how-do-i-create-a-simple-qt-console-application-in-c#comment4516692_4180485
-
-  // my implementation
-  App my_app(app);
-  //App *my_app = new App(&app);
-
+  App my_app(&app);
   // finish Qt event loop (i.e. the whole program) after receiving finished()
   QObject::connect(&my_app, SIGNAL(finished()), &app, SLOT(quit()));
   QTimer::singleShot(0, &my_app, SLOT(run()));

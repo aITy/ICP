@@ -1,5 +1,5 @@
 QT -= gui
-CONFIG += qt console debug  # console opens cout, cerr
+CONFIG += qt xml console debug  # console opens cout, cerr
 CONFIG -= app_bundle  # make console app work under MacOSX
 
 DEFINES += QT_NO_KEYWORDS

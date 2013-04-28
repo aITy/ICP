@@ -2,21 +2,23 @@
  * Authors: Jiri Navratil (xnavra36)
  *          Jan Pacner (xpacne00)
  *
- * Desc: Main file covering the whole Qt GUI version of draughts game.
+ * Desc: Main file covering the whole CLI version of draughts game.
  */
 
-#include <qt>
+#include <QtCore>
+//#include <QtCore/QCoreApplication>
+#include "app.h"
 
-int main(int argc; char argv[]) {
-  argc = argc; argv = argv;
+int main(int argc, char *argv[]) {
+  //QApplication();
+  QCoreApplication app(argc, argv);
 
-  // FIXME pripoj se na nahodny lokalni port (a vypis ho uzivateli) a
-  //   cekej na prichozi pozadavky (tzn. spust serverovou cast)
-  //   TCP cekani na prijem/odeslani zpravy
-  //   => bude reseno pres Qt a bude to asi nejake makro z hlavickoveho
-  //     souboru implementujiciho .o modul sitove komunikace
+  // all the following signal-slot handling is essential - see
+  // http://stackoverflow.com/questions/4180394/how-do-i-create-a-simple-qt-console-application-in-c#comment4516692_4180485
+  App my_app(&app);
+  // finish Qt event loop (i.e. the whole program) after receiving finished()
+  QObject::connect(&my_app, SIGNAL(finished()), &app, SLOT(quit()));
+  QTimer::singleShot(0, &my_app, SLOT(run()));
 
-  // FIXME cekej na uzivatelsky vstup => Qt.run()
-
-  return EXIT_SUCCESS;
+  return app.exec();
 }
