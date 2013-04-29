@@ -7,7 +7,9 @@
 #define __APP_H__
 
 #include <QtCore>
-#include <iostream>
+#include <QtNetwork>
+//#include <QTcpServer>
+//#include <iostream>
 
 /** FIXME no idea if this works on Windows without ANSI.SYS file */
 #define _TERM_C_START "\x01B["  /**< `escape' and `left bracket' characters */
@@ -48,13 +50,18 @@ class App : public QObject {
   //private: only me
   //protected: me and my descendants
   //public: everyone
+  QTextStream out;
 public:
+  App();
+  ~App();
+
   QFile file_stdin;
   App(QCoreApplication *);
+  QTcpServer *server;
 
 public Q_SLOTS:
   void run(void);
-  void gotConnected();
+  void gotConnection();
 
 Q_SIGNALS:
   void finished(void);

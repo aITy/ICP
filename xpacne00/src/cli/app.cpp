@@ -161,7 +161,7 @@ void App::run(void) {
         "  s <file>         save game to file" << endl <<
         "  m c3 b4          droughtsmen/king move" << endl <<
         "  pm c3            show possible moves" << endl <<
-        "  hm c3            help with move (using AI)" << endl <<
+        "  hm               help with move (using AI)" << endl <<
         "  <CR>             refresh" << endl;
         qtin.readLine();
     }
@@ -207,18 +207,23 @@ void App::run(void) {
         QString s(g.getXmlStr());
     }
     else if (cmd.at(0) == "m") {
-      //FIXME
-      if (g.move(5, 5, 6, 6)) {
+      IcpSyntaxParser::pair_uint_t coord_src =
+        IcpSyntaxParser::strCoordToUint(cmd.at(1));
+      IcpSyntaxParser::pair_uint_t coord_dst =
+        IcpSyntaxParser::strCoordToUint(cmd.at(2));
+
+      if (g.move(coord_src.first, coord_src.second, coord_dst.first,
+            coord_dst.second)) {
         qterr << g.getError() << endl;
       }
     }
     else if (cmd.at(0) == "pm") {
-      //FIXME
-      g.showPossibleMoves(5, 6, 7, 8);
+      IcpSyntaxParser::pair_uint_t coord =
+        IcpSyntaxParser::strCoordToUint(cmd.at(1));
+      g.showPossibleMoves(coord.first, coord.second);
     }
     else if (cmd.at(0) == "hm") {
-      //FIXME
-      g.showPossibleMoves(5, 6, 7, 8);
+      g.adviceMove();
     }
     // refresh
     else if (cmd.at(0) != "") {

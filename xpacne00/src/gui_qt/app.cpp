@@ -6,7 +6,12 @@
 #include "app.h"
 //#include "../share/board.h"
 
-App::App(QCoreApplication *_parent) : QObject(_parent) {}
+App::App(QCoreApplication *_parent) : QObject(_parent),
+  out(stdout, QIODevice::WriteOnly | QIODevice::Text), server(NULL) {}
+
+App::~App() {
+  if (server != NULL) delete server;
+}
 
 void App::run(void) {
   //QStringList sl = par->arguments();
@@ -16,23 +21,22 @@ void App::run(void) {
   //  std::cout << (*i).toLocal8Bit().constData() << std::endl;
   //}
 
-  QTcpServer server;
+  server = new QTcpServer(this);
 
-  if (! server.listen(QHostAddress::Any, 0)) {
-    qterr << "ERR: TCP server not listening."  << endl;
-    Q_EMIT finished();
+  connect(server, SIGNAL(newConnection()), this, SLOT(gotConnection()));
+
+  if (! server->listen(QHostAddress::Any, 0)) {
+  //if (! server->listen(QHostAddress::LocalHost, 0)) {
+    qDebug() << "ERR: TCP server not listening." << endl;
+    Q_EMIT finished();  // this blocks unless queued connections are used
   }
-
-  connect(socket, SIGNAL(connected()), this, SLOT(gotConnected()));
+  qDebug() << server->serverAddress().toString() << "port" <<
+    QString::number(server->serverPort()) << endl;
 
   //QFile file_stdin;
   file_stdin.open(stdin, QIODevice::ReadWrite);
   //file_stdin.open(stdin, QIODevice::ReadOnly);
   QTextStream in(&file_stdin);
-
-  QFile file_stdout;
-  file_stdout.open(stdout, QIODevice::WriteOnly | QIODevice::Text);
-  QTextStream out(&file_stdout);
 
   QString line;
 
@@ -42,18 +46,27 @@ void App::run(void) {
     //QString word;
     //qtin >> word;  // read a word (separated by space)
     QStringList cmd_l = line.split(" ", QString::SkipEmptyParts);
-
-    //std::cout << "at(0): " << cmd_l.at(0) << std::endl;
-    out << QString("at(0): ") << endl;
+    out << "cmd_l.size(): " << cmd_l.size() << endl;
+    out << "at(0): " << cmd_l.at(0) << endl;
   }
 
   //file.close();  // not needed
   Q_EMIT finished();
 }
 
-void App::gotConnected() {
-  qDebug() << t
-  if (server.hasPendingConnections()) {
-    server.nextPendingConnection()->deleteLater();
+void App::gotConnection() {
+  // not needed in this case; only for demonstration
+  QTcpServer* ser = qobject_cast<QTcpServer *>(this->sender());
+
+  out << "gotConnection()" << endl;
+
+  if (ser->hasPendingConnections()) {
+    out << "some pending connections, connecting..." << endl;
+    ser->nextPendingConnection()->deleteLater();
+    out << "manually disconnected" << endl;
+  }
+  else {
+    // this could occur when the initiator disconnects really fast
+    out << "no pending connections" << endl;
   }
 }

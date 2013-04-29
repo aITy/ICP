@@ -10,6 +10,53 @@
 //#include <QtCore>
 //#include "../share/player.h"
 
+class IcpSyntaxParser {
+  public:
+    typedef QPair<unsigned int, unsigned int> pair_uint_t;
+    typedef QPair<QString, QString> pair_str_t;
+    pair_uint_t strCoordToUint(QString);
+    pair_str_t intToStrCoord(unsigned int, unsigned int);
+};
+
+#define NET_TOK_INVITE        "INVITE "
+#define NET_TOK_INVITE_ACCEPT "INVITE_ACCEPT "
+#define NET_TOK_INVITE_REJECT "INVITE_REJECT "
+#define NET_TOK_GAME          "GAME "
+//#define NET_TOK_WHITE         "WHITE "
+//#define NET_TOK_BLACK         "BLACK "
+#define NET_TOK_NEW           "NEW "
+#define NET_TOK_LOAD          "LOAD "
+#define NET_TOK_GAME_ACCEPT   "GAME_ACCEPT"
+#define NET_TOK_GAME_REJECT   "GAME_REJECT"
+#define NET_TOK_MOVE          "MOVE "
+#define NET_TOK_EXIT          "EXIT"
+
+class NetCmdParser {
+  private:
+    cmd_t last_cmd;
+    QString s;
+  public:
+    typedef enum {
+      NONE         ,
+      INVITE       ,
+      INVITE_ACCEPT,
+      INVITE_REJECT,
+      GAME         ,
+      WHITE        ,
+      BLACK        ,
+      NEW          ,
+      LOAD         ,
+      GAME_ACCEPT  ,
+      GAME_REJECT  ,
+      MOVE         ,
+      EXIT         ,
+    } tok_t;
+
+    CmdParser(QString);
+    cmd_t getNextCmd();
+    QString getRest();
+};
+
 class Player {
   private:
     bool is_black;
@@ -37,7 +84,9 @@ class Game : public QObject {
     game_state_t game_state;
     //FIXME initialize
     /** used for checking of possible moves before a user move is processed */
-    QPair<unsigned int, unsigned int> last_move_dst;
+    IcpSyntaxParser::pair_uint_t last_move_dst;
+    IcpSyntaxParser::pair_uint_t possible_jump;
+    bool possible_move_present;
 
     void initXml();
     void appendMoveToXml(unsigned int, unsigned int, unsigned int, unsigned int);
@@ -56,8 +105,10 @@ class Game : public QObject {
     } err_t;
 
     typedef enum {
-      MEN_NONE,  /**< empty boxes on the board */
-      MEN_POSSIBLE_MOVE,  /**< */
+      /** empty boxes on the board */
+      MEN_NONE,
+      /** denotes boxes where the given draughtsmen can possibly move */
+      MEN_POSSIBLE_MOVE,
       MEN_WHITE,
       MEN_WHITE_KING,
       MEN_BLACK,
@@ -105,7 +156,8 @@ class Game : public QObject {
 
     int move(unsigned int, unsigned int, unsigned int, unsigned int);
     void showPossibleMoves(unsigned int, unsigned int);
-    void hidePossibleMoves(unsigned int, unsigned int);
+    void hidePossibleMoves();
+    void adviceMove();
 
     Player *getPlayerWhite();
     Player *getPlayerBlack();
@@ -122,54 +174,6 @@ class Game : public QObject {
     void gotConnected();
     void gotDisconnected();
     void readReply();
-};
-
-class IcpSyntaxParser {
-  private:
-    QString s;
-  public:
-    IcpSyntaxParser(QString);
-    QPair<unsigned int, unsigned int> strCoordToInt(QString);
-    QPair<QString, QString> intToStrCoord(unsigned int, unsigned int);
-};
-
-#define NET_TOK_INVITE        "INVITE "
-#define NET_TOK_INVITE_ACCEPT "INVITE_ACCEPT "
-#define NET_TOK_INVITE_REJECT "INVITE_REJECT "
-#define NET_TOK_GAME          "GAME "
-//#define NET_TOK_WHITE         "WHITE "
-//#define NET_TOK_BLACK         "BLACK "
-#define NET_TOK_NEW           "NEW "
-#define NET_TOK_LOAD          "LOAD "
-#define NET_TOK_GAME_ACCEPT   "GAME_ACCEPT"
-#define NET_TOK_GAME_REJECT   "GAME_REJECT"
-#define NET_TOK_MOVE          "MOVE "
-#define NET_TOK_EXIT          "EXIT"
-
-class NetCmdParser {
-  private:
-    last_cmd;
-    QString s;
-  public:
-    typedef enum {
-      NONE         ,
-      INVITE       ,
-      INVITE_ACCEPT,
-      INVITE_REJECT,
-      GAME         ,
-      WHITE        ,
-      BLACK        ,
-      NEW          ,
-      LOAD         ,
-      GAME_ACCEPT  ,
-      GAME_REJECT  ,
-      MOVE         ,
-      EXIT         ,
-    } tok_t;
-
-    CmdParser(QString);
-    cmd_t getNextCmd();
-    QString getRest();
 };
 
 #endif

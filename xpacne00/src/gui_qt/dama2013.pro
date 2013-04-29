@@ -1,4 +1,4 @@
-# QT += gui
+QT += gui network
 CONFIG += qt xml console debug  # console opens cout, cerr
 CONFIG -= app_bundle  # make console app work under MacOSX
 

@@ -70,7 +70,8 @@ void Game::appendMoveToXml(Player &p, unsigned int srcx, unsigned int srcy,
   //doc->elementsByTagName("moves").at(0).toElement().appendChild(el_move);
 }
 
-void Game::Game(void) : socket(NULL), game_state(state_pre_init) {
+void Game::Game(void) :
+    socket(NULL), game_state(state_pre_init), possible_move_present(false) {
   player_white = new Player();
   player_black = new Player();
   doc = new QDomDocument("draughts-document");
@@ -170,19 +171,18 @@ err_t Game::move(unsigned int srcx, unsigned int srcy,
   if (! (_x >= 0 && _x < board[0].size() && _y >= 0 && _y < board.size()) )
     return ERR_INVALID_MOVE;
 
-  /** check presence */
-  if (board[y][x] == MEN_NONE)
-    return false;
-
   /** return if the previous move wasn't complete */
   if ((srcx != last_move_dst.first || srcy != last_move_dst.second) &&
-      //FIXME implement somehow
       showPossibleMoves(last_move_dst.first, last_move_dst.second)) {
     hidePossibleMoves();
     return ERR_PREV_MOVE_NOT_FINISHED;
   }
 
   hidePossibleMoves();
+
+  /** check presence */
+  if (board[y][x] == MEN_NONE)
+    return false;
 
   //FIXME
   /** check
@@ -239,6 +239,8 @@ bool showPossibleMoves(unsigned int _x, unsigned int _y) {
 
   int x = _x;
   int y = _y;
+  //FIXME vycist tohle z qpair
+  bool can_jump = false;
   int i = 1;
 
   if (board[y][x] == MEN_BLACK_KING || board[y][x] == MEN_WHITE_KING) {
@@ -263,25 +265,33 @@ bool showPossibleMoves(unsigned int _x, unsigned int _y) {
       // bottom left
       if (x -1 >= 0 && y +1 < board.size()) {
         if (board[y +1][x -1] == MEN_NONE) {
-            board[y +1][x -1] = MEN_POSSIBLE_MOVE;
+          board[y +1][x -1] = MEN_POSSIBLE_MOVE;
+          possible_move_present = true;
         }
         // some men/king
         else {
           if (x -2 >= 0 && y +2 < board.size() &&
-              board[y +2][x -2] == MEN_NONE)
-              board[y +2][x -2] = MEN_POSSIBLE_MOVE;
+              board[y +2][x -2] == MEN_NONE) {
+            board[y +2][x -2] = MEN_POSSIBLE_MOVE;
+            possible_move_present = true;
+            can_jump = true;
+          }
         }
       }
       // bottom right
       if (x +1 < board[0].size() && y +1 < board.size()) {
         if (board[y +1][x +1] == MEN_NONE) {
-            board[y +1][x +1] = MEN_POSSIBLE_MOVE;
+          board[y +1][x +1] = MEN_POSSIBLE_MOVE;
+          possible_move_present = true;
         }
         // some men/king
         else {
           if (x +2 < board[0].size() && y +2 < board.size() &&
-              board[y +2][x +2] == MEN_NONE)
-              board[y +2][x +2] = MEN_POSSIBLE_MOVE;
+              board[y +2][x +2] == MEN_NONE) {
+            board[y +2][x +2] = MEN_POSSIBLE_MOVE;
+            possible_move_present = true;
+            can_jump = true;
+          }
         }
       }
     }
@@ -290,45 +300,95 @@ bool showPossibleMoves(unsigned int _x, unsigned int _y) {
       // tl
       if (x -1 >= 0 && y -1 >= 0 ) {
         if (board[y -1][x -1] == MEN_NONE) {
-            board[y -1][x -1] = MEN_POSSIBLE_MOVE;
+          board[y -1][x -1] = MEN_POSSIBLE_MOVE;
+          possible_move_present = true;
         }
         // some men/king
         else {
           if (x -2 >= 0 && y -2 >= 0 &&
-              board[y -2][x -2] == MEN_NONE)
-              board[y -2][x -2] = MEN_POSSIBLE_MOVE;
+              board[y -2][x -2] == MEN_NONE) {
+            board[y -2][x -2] = MEN_POSSIBLE_MOVE;
+            possible_move_present = true;
+            can_jump = true;
+          }
         }
       }
       // tr
       if (x +1 < board[0].size() && y -1 >= 0 ) {
         if (board[y -1][x +1] == MEN_NONE) {
-            board[y -1][x +1] = MEN_POSSIBLE_MOVE;
+          board[y -1][x +1] = MEN_POSSIBLE_MOVE;
+          possible_move_present = true;
         }
         // some men/king
         else {
           if (x +2 < board[0].size() && y -2 >= 0 &&
-              board[y -2][x +2] == MEN_NONE)
-              board[y -2][x +2] = MEN_POSSIBLE_MOVE;
+              board[y -2][x +2] == MEN_NONE) {
+            board[y -2][x +2] = MEN_POSSIBLE_MOVE;
+            possible_move_present = true;
+            can_jump = true;
+          }
         }
       }
     }
   }
+
+  return can_jump;
 }
 
-void hidePossibleMoves(unsigned int srcx, unsigned int srcy) {
+void hidePossibleMoves() {
   for (int i = 0; i < board.size(); ++i) {
     for(int j = 0; j < board[i].size(); ++j) {
       if (board[i][j] == MEN_POSSIBLE_MOVE)
         board[i][j] = MEN_NONE;
     }
   }
+
+  possible_move_present = false;
 }
 
-Game::getPlayerWhite() {
+void Game::adviceMove() {
+  /** the previous move wasn't complete (jump necessary) */
+  if (showPossibleMoves(last_move_dst.first, last_move_dst.second)) {
+    /** make the first found possible move the advice */
+    bool first_iter = true;
+    for (int i = 0; i < board.size(); ++i) {
+      for(int j = 0; j < board[i].size(); ++j) {
+        if (board[i][j] == MEN_POSSIBLE_MOVE)
+          /** keep the first found */
+          if (first_iter)
+            first_iter = false;
+          /** remove the others */
+          else
+            board[i][j] = MEN_NONE;
+      }
+    }
+  }
+  else {
+    men_t tmp;
+
+    if (board[last_move_dst.first][last_move_dst.second] == MEN_WHITE ||
+        board[last_move_dst.first][last_move_dst.second] == MEN_WHITE_KING)
+      tmp = black;
+    else
+      tmp = white;
+
+    hledej prvniho opacneho
+    for (int i = 0; i < board.size(); ++i) {
+      t
+        for(int j = 0; j < board[i].size(); ++j) {
+          if (board[i][j] != MEN_NONE &&
+              board[i][j] != board[last_move_dst.first][last_move_dst.second] &&
+              board[i][j] != MEN_&& )
+        }
+    }
+  }
+}
+
+Player *Game::getPlayerWhite() {
   return player_white;
 }
 
-Game::getPlayerBlack() {
+Player *Game::getPlayerBlack() {
   return player_black;
 }
 
@@ -396,22 +456,20 @@ void Game::readReply() {
   soc->errorString();
 }
 
-IcpSyntaxParser::IcpSyntaxParser(QString _s) : s(_s) { }
-
 /** x ~ a-h; y ~ 0-8 */
-QPair<unsigned int, unsigned int> IcpSyntaxParser::strCoordToInt(QString s) {
+pair_uint_t IcpSyntaxParser::strCoordToUint(QString s) {
   /** allow loading only 8x8 sized boards */
   Q_ASSERT(s.at(0) >= 'a' && s.at(0) <= 'h' &&
       s.at(1) >= '1' && s.at(1) <= '8');
-  QPair<unsigned int, unsigned int> p(s.at(0) - 'a', s.at(1) - '1');
+  pair_uint_t p(s.at(0) - 'a', s.at(1) - '1');
   return p;
 }
 
 /** x ~ a-h; y ~ 0-8 */
-QPair<QString, QString> IcpSyntaxParser::intToStrCoord(unsigned int x, unsigned int y) {
+pair_str_t IcpSyntaxParser::intToStrCoord(unsigned int x, unsigned int y) {
   /** allow saving of bigger boards than 8x8 */
   Q_ASSERT(x + 'a' <= 'Z');
-  QPair<QString, QString> p(
+  pair_str_t p(
       //FIXME static_cast<char>
       const_cast<char>(x + 'a'),
       std::to_string(y +1));
