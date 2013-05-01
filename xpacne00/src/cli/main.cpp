@@ -5,20 +5,20 @@
  * Desc: Main file covering the whole CLI version of draughts game.
  */
 
-#include <QtCore>
-//#include <QtCore/QCoreApplication>
 #include "app.h"
 
 int main(int argc, char *argv[]) {
   //QApplication();
   QCoreApplication app(argc, argv);
-
-  // all the following signal-slot handling is essential - see
-  // http://stackoverflow.com/questions/4180394/how-do-i-create-a-simple-qt-console-application-in-c#comment4516692_4180485
   App my_app(&app);
-  // finish Qt event loop (i.e. the whole program) after receiving finished()
-  QObject::connect(&my_app, SIGNAL(finished()), &app, SLOT(quit()));
-  QTimer::singleShot(0, &my_app, SLOT(run()));
 
+  /** end Qt event loop (i.e. the whole program) after receiving finished() */
+  QObject::connect(&my_app, SIGNAL(finished()), &app, SLOT(quit()));
+  /** schedule refresh to be processed in next event loop, see
+      http://www.qtcentre.org/threads/29989-QTimer-singleShot(0-confusion */
+  QTimer::singleShot(0, &my_app, SLOT(refresh()));
+  //QMetaObject::invokeMethod(this, "finished", Qt::QueuedConnection);
+
+  /** start the main loop */
   return app.exec();
 }

@@ -8,6 +8,7 @@
 
 #include <QtCore>
 #include <QtNetwork>
+//#include <cstdio>
 //#include <QTcpServer>
 //#include <iostream>
 
@@ -50,18 +51,26 @@ class App : public QObject {
   //private: only me
   //protected: me and my descendants
   //public: everyone
+
+private:
   QTextStream out;
+  QTextStream eout;
+  QTextStream in;
+
+  QTcpServer *server;
+  QSocketNotifier *notifier;
+  QString line;
+  QStringList cmd_l;
+
 public:
-  App();
+  App(QCoreApplication *);
   ~App();
 
-  QFile file_stdin;
-  App(QCoreApplication *);
-  QTcpServer *server;
-
 public Q_SLOTS:
-  void run(void);
-  void gotConnection();
+  void refresh(void);
+  void handleInput(void);
+  void gotConnection(void);
+  void handleSingleShot(void);
 
 Q_SIGNALS:
   void finished(void);

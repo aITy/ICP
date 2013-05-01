@@ -18,7 +18,8 @@ int main(int argc, char *argv[]) {
   App my_app(&app);
   // finish Qt event loop (i.e. the whole program) after receiving finished()
   QObject::connect(&my_app, SIGNAL(finished()), &app, SLOT(quit()));
-  QTimer::singleShot(0, &my_app, SLOT(run()));
+  my_app.refresh();
+  //QTimer::singleShot(0, &my_app, SLOT(run()));
 
   return app.exec();
 }

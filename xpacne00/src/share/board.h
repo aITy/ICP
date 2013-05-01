@@ -88,6 +88,9 @@ class Game : public QObject {
     IcpSyntaxParser::pair_uint_t possible_jump;
     bool possible_move_present;
 
+    int replay_delay;
+    int replay_stop_index;
+
     void initXml();
     void appendMoveToXml(unsigned int, unsigned int, unsigned int, unsigned int);
 
@@ -138,26 +141,36 @@ class Game : public QObject {
       STATE_EXIT_RECEIVE,
       STATE_MOVE_WHITE,
       STATE_MOVE_BLACK,
-      STATE_REPLAYING,
+      STATE_REPLAY_STEP,
+      STATE_REPLAY_TIMED,
+      STATE_REPLAY_PAUSE,
+      STATE_REPLAY_STOP,
       STATE_END,  /**< disconnected, exit, error, etc. */
     } state_t;
 
     Game();
     ~Game();
     void gameLocal();
-    void gameRemote(QHostAddress, int);
-    void gameRemote(QTcpSocket *);
+    void gameRemote(QHostAddress, int);  /**< locally initiated */
+    void gameRemote(QTcpSocket *);  /**< remotely initiated */
     void gameFromFile(QString);
     //FIXME some flag, that the game can not be user-modified while replaying
     void gameFromFile(QString, replay_t);
     //FIXME adjust to state_t!!!
     bool isRunning();
     bool isLocal();
+    state_t getState();//FIXME
 
     int move(unsigned int, unsigned int, unsigned int, unsigned int);
     void showPossibleMoves(unsigned int, unsigned int);
     void hidePossibleMoves();
     void adviceMove();
+
+    void setReplayTimeout(int);
+    bool replayMoveForward(int);  //FIXME return true if all moves were done
+    bool replayMoveBackward(int);  //FIXME return true if all moves were done
+    bool replayMovePause();  //FIXME return true if all moves were done
+    bool replayMoveStop();  //FIXME return true if all moves were done
 
     Player *getPlayerWhite();
     Player *getPlayerBlack();

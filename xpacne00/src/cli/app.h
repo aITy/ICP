@@ -7,7 +7,8 @@
 #define __APP_H__
 
 #include <QtCore>
-#include <iostream>
+#include <QtNetwork>
+#include "../share/board.h"
 
 /** FIXME no idea if this works on Windows without ANSI.SYS file */
 #define _TERM_C_START "\x01B["  /**< `escape' and `left bracket' characters */
@@ -46,19 +47,31 @@
  */
 class App : public QObject {
   Q_OBJECT;
-  //private: only me
-  //protected: me and my descendants
-  //public: everyone
+
 private:
-  QCoreApplication &par;
+  QTextStream qtout;
+  QTextStream qterr;
+  QTextStream qtin;
+
+  QTcpServer *server;
+  QSocketNotifier *notifier;
+  QString line;
+  QStringList cmd_l;
+  Game g;
+
+  void parseLine();
 
 public:
-  App(QCoreApplication &);
+  App(QCoreApplication *);
+  ~App();
 
 public Q_SLOTS:
-  void run(void);
+  void refresh(void);
+  void handleInput(void);
+  void gotConnection();
 
 Q_SIGNALS:
+  // emit blocks unless queued connections are used
   void finished(void);
 };
 
