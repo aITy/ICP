@@ -32,6 +32,7 @@ protokol
      INVITE_REJECT
   A: GAME black|white new
      GAME black|white load xml_string_s_loadovanou_hrou
+     # tak dlouho, dokud nektery neodpovi GAME_ACCEPT/GAME_REJECT/EXIT
   B: GAME_ACCEPT
      GAME_REJECT
   A/B: MOVE XY_old XY_new
@@ -41,26 +42,23 @@ XML (musi zachovavat poradi pri parsovani!)
   <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <!-- standalone because we have no DTD for it -->
   <draughts version="1.0">
-    <game type="network/local" ?host="hostname/IPv4/IPv6">
+    <game type="network/local" host="hostname/IPv4/IPv6" port="15646">
     <players>
-      <black>name1</black>
-      <white>name2</white>
+      <black>Alias 1</black>
+      <white>Alias 2</white>
     </players>
-    <moves type="XML/ICP">
-      1. c3-b4 b6-c5
-      2. c3-b4 b6xc5
-
-      <move srcx="d" srcy="4" dstx="g" dsty="8">
-      <move srcx="e" srcy="5" dstx="h" dsty="3">
-      <move srcx="a" srcy="1" dstx="d" dsty="5">
-      <move srcx="c" srcy="3" dstx="f" dsty="7">
-      <move srcx="b" srcy="2" dstx="e" dsty="6">
-      <move srcx="f" srcy="6" dstx="i" dsty="4">
-      <move srcx="d" srcy="4" dstx="g" dsty="8">
-      <move srcx="e" srcy="5" dstx="h" dsty="3">
-      <move srcx="a" srcy="1" dstx="d" dsty="5">
-      <move srcx="c" srcy="3" dstx="f" dsty="7">
-      <move srcx="f" srcy="6" dstx="i" dsty="4">
+    <moves>
+      <move srcx="d" srcy="4" dstx="g" dsty="8" kicked="false">
+      <move srcx="e" srcy="5" dstx="h" dsty="3" kicked="false">
+      <move srcx="a" srcy="1" dstx="d" dsty="5" kicked="false">
+      <move srcx="c" srcy="3" dstx="f" dsty="7" kicked="false">
+      <move srcx="b" srcy="2" dstx="e" dsty="6" kicked="false">
+      <move srcx="f" srcy="6" dstx="i" dsty="4" kicked="false">
+      <move srcx="d" srcy="4" dstx="g" dsty="8" kicked="false">
+      <move srcx="e" srcy="5" dstx="h" dsty="3" kicked="true">
+      <move srcx="a" srcy="1" dstx="d" dsty="5" kicked="true">
+      <move srcx="c" srcy="3" dstx="f" dsty="7" kicked="false">
+      <move srcx="f" srcy="6" dstx="i" dsty="4" kicked="true">
     </moves>
   </draughts>
 

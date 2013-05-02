@@ -46,6 +46,7 @@
 /**
  * main task which comprises the whole console program
  */
+// default inheritance is private
 class App : public QObject {
   Q_OBJECT;
   //private: only me

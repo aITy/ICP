@@ -57,18 +57,19 @@ private:
   QSocketNotifier *notifier;
   QString line;
   QStringList cmd_l;
-  Game g;
+  Game *g;
 
   void parseLine();
 
 public:
   App(QCoreApplication *);
   ~App();
+  void refresh(void);
 
 public Q_SLOTS:
-  void refresh(void);
   void handleInput(void);
   void gotConnection();
+  void schedule_refresh();
 
 Q_SIGNALS:
   // emit blocks unless queued connections are used
