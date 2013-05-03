@@ -8,7 +8,7 @@
 
 #include <QtCore>
 #include <QtNetwork>
-#include "../share/board.h"
+#include "../share/game.h"
 
 /** FIXME no idea if this works on Windows without ANSI.SYS file */
 #define _TERM_C_START "\x01B["  /**< `escape' and `left bracket' characters */
@@ -55,11 +55,12 @@ private:
 
   QTcpServer *server;
   QSocketNotifier *notifier;
+  bool new_conn_handled;  /**< user must handle it by hand */
   QString line;
   QStringList cmd_l;
   Game *g;
 
-  void parseLine();
+  void prepareNewGame(void);
 
 public:
   App(QCoreApplication *);
@@ -68,8 +69,8 @@ public:
 
 public Q_SLOTS:
   void handleInput(void);
-  void gotConnection();
-  void schedule_refresh();
+  void gotConnection(void);
+  void schedule_refresh(void);
 
 Q_SIGNALS:
   // emit blocks unless queued connections are used

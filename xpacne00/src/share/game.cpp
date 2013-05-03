@@ -3,6 +3,79 @@
  *          Jan Pacner (xpacne00)
  */
 
+#include "game.h"
+
+//TODO OK
+void QTimerImproved::resendTimeout(void) {
+  if (singleShotScheduledInternally) {
+    singleShotScheduledInternally = false;
+
+    if (originalWasSingleShot)
+      singleShot = true;
+    else
+      singleShot = false;
+
+    interval = period;
+    start();
+  }
+
+  Q_EMIT newTimeout();
+}
+
+//TODO OK
+void QTimerImproved::QTimerImproved(void) : start(0), paused(false) {
+  connect(this, SIGNAL(timeout(void)), this, SLOT(resendTimeout(void)));
+}
+
+//TODO OK
+void QTimerImproved::start(void) {
+  paused = false;
+  begin = QDateTime::toMSecsSinceEpoch();
+  end = begin;
+  period = interval;
+  QTimer::start();
+}
+
+//TODO OK
+void QTimerImproved::start(int msec) {
+  paused = false;
+  begin = QDateTime::toMSecsSinceEpoch();
+  end = begin;
+  period = msec;
+  QTimer::start(msec);
+}
+
+//TODO OK
+void QTimerImproved::stop(void) {
+  QTimer::stop();
+  paused = false;
+}
+
+//TODO OK
+void QTimerImproved::pause(void) {
+  if (active) {
+    QTimer::stop();
+    end = QDateTime::toMSecsSinceEpoch();
+    singleShotScheduledInternally = false;
+    paused = true;
+  }
+}
+
+//TODO OK
+void QTimerImproved::resume(void) {
+  if (paused) {
+    paused = false;
+    begin = QDateTime::toMSecsSinceEpoch();
+    singleShotScheduledInternally = true;
+    singleShot(end - begin, this, SLOT(resendTimeout));
+  }
+}
+
+//TODO OK
+bool QTimerImproved::isPaused(void) {
+  return paused;
+}
+
 //TODO OK
 /** x ~ a-h; y ~ 0-8 */
 pair_uint_t IcpSyntaxParser::strCoordToUint(QString s) {
@@ -81,20 +154,40 @@ cmd_t NetCmdParser::getNextCmd() {
 }
 
 //TODO OK
-QString NetCmdParser::getRest() {
+QString NetCmdParser::getRest(void) {
   return s;
 }
 
 //TODO OK
-Player::Player(QString _name = "Player Alias") : kicked(0), name(_name), local(true) { }
+Player::Player(QObject *_parent) :
+  parent(_parent), kicked(0), name("Player Alias"), local(true) { }
+
+/**
+ * @return true if game can be played further
+ */
+//TODO OK
+bool Player::incKicked(void) {
+  kicked++;
+
+  if ( ( (parent->board.size() / 2) *
+        ((parent->board.size() / 2) -1) ) == kicked )
+    return false;
+  else
+    return true;
+}
 
 //TODO OK
-int Player::getKickedCount() {
+void Player::decKicked(void) {
+  kicked--;
+}
+
+//TODO OK
+int Player::getKicked(void) {
   return kicked;
 }
 
 //TODO OK
-void Game::initXml() {
+void Game::initXml(void) {
   /** it is yet initialized */
   if (doc->firstChild) return;
 
@@ -125,7 +218,6 @@ void Game::initXml() {
 // http://www.qtforum.org/article/27624/how-to-read-a-xml-file.html
 // http://qt-project.org/forums/viewthread/13723
 // http://www.qtcentre.org/threads/12313-remove-node-in-xml-file
-//TODO OK
 void Game::appendMoveToXml(Player &p, unsigned int srcx, unsigned int srcy,
     unsigned int dstx, unsigned int dsty, bool kicked = false) {
   QDomElement el_move = doc->createElement("move");
@@ -154,8 +246,9 @@ void Game::appendMoveToXml(Player &p, unsigned int srcx, unsigned int srcy,
   //doc->elementsByTagName("moves").at(0).toElement().appendChild(el_move);
 }
 
-/** returns true if the move was successful */
+/** @returns true if the move was successful */
 bool Game::moveFromXml(move_xml_dir_t t) {
+  current_move_pointer;
 }
 
 /**
@@ -169,19 +262,35 @@ bool Game::loadFromIcpSyntax(QString s) {
 
   while (it.hasNext()) {
     //FIXME toLocal8Bit().constData()
-
     QListIterator<QString> itt(it.next().split(" ", QString::SkipEmptyParts));
+
     while (itt.hasNext()) {
       QString tmp = itt.next();
 
-      IcpSyntaxParser::pair_uint_t pair1 = IcpSyntaxParser::strCoordToUint(itt.next());
+      IcpSyntaxParser::pair_uint_t pair1 =
+        IcpSyntaxParser::strCoordToUint(tmp);
       tmp.remove(0, 2);  /**< remove c3 */
 
+      bool kicked;
       while (! tmp.empty()) {
-        tmp.remove(0, 1);  /**< remove - x */
+        if (tmp.at(0) == 'x')
+          kicked = true;
+        else
+          kicked = false;
+
+        tmp.remove(0, 1);  /**< remove x - */
         IcpSyntaxParser::pair_uint_t pair2 =
-          IcpSyntaxParser::strCoordToUint(itt.next());
-        appendMoveToXml(pair1.first, pair1.second, pair2.first, pair2.second);
+          IcpSyntaxParser::strCoordToUint(tmp);
+
+        appendMoveToXml(pair1.first, pair1.second,
+            pair2.first, pair2.second, kicked);
+
+        if (kicked)
+          if (getPlayerFromCoord(pair1.first, pair1.second)->incKicked()) {
+            game_state = STATE_END;
+            return true;
+          }
+
         pair1 = pair2;
         tmp.remove(0, 2);  /**< remove c3 */
       }
@@ -192,33 +301,58 @@ bool Game::loadFromIcpSyntax(QString s) {
 }
 
 //TODO OK
+Player *getPlayerFromCoord(unsigned int x, unsigned int y) {
+  Q_ASSERT(_x >= 0 && _x < board[0].size() && _y >= 0 && _y < board.size());
+
+  if (board[y][x] == MEN_WHITE ||
+      board[y][x] == MEN_WHITE_KING)
+    return player_white;
+  else if (board[y][x] == MEN_BLACK ||
+           board[y][x] == MEN_BLACK_KING)
+    return player_black;
+  else
+    return NULL;
+}
+
+//TODO OK
 void Game::prepareNewSocket(QHostAddress addr, int port) {
   Q_ASSERT(socket == NULL);
 
   socket = new QTcpSocket(this);
 
   connect(socket, SIGNAL(connected()), this, SLOT(gotConnected()));
+  /** handle newly arrived data */
+  connect(socket, SIGNAL(readyRead()), this, SLOT(gotNewData()));
   connect(socket, SIGNAL(disconnected()), this, SLOT(gotDisconnected()));
   //connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
   //    SLOT(gotError(QAbstractSocket::SocketError)));
   connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
       this, SLOT(gotDisconnected()));
-  connect(socket, SIGNAL(readyRead()), this, SLOT(handleReply()));
 
   socket->connectToHost(addr, port);
 }
 
 //TODO OK
-void Game::Game(void) : socket(NULL), game_state(STATE_PRE_INIT),
-  possible_move_present(false), replay_delay(300), remote_server_port(-1) {
-  player_white = new Player("Player White");
-  player_black = new Player("Player Black");
-  doc = new QDomDocument("ICP_draughts_game_XML_document");
-  replay_timer = QTimer(this);
+void Game::prepareNewTimer(void) {
+  if (replay_timer != NULL) delete replay_timer;
+
+  replay_timer = new QTimerImproved(this);
+  connect(replay_timer, Q_SIGNAL(newTimeout(void), this, Q_SLOT(gotTimeout(void))));
+  replay_timer->setInterval(replay_delay);
 }
 
 //TODO OK
-void Game::~Game() {
+void Game::Game(void) : socket(NULL), game_state(STATE_PRE_INIT),
+  possible_move_present(false), replay_delay(DEFAULT_TIMEOUT), remote_server_port(-1),
+  replay_timer(NULL) {
+  player_white = new Player("Player White");
+  player_black = new Player("Player Black");
+  doc = new QDomDocument("ICP_draughts_game_XML_document");
+  remote_will_load = false;
+}
+
+//TODO OK
+void Game::~Game(void) {
   if (doc          != NULL)
     free(doc);
   if (socket       != NULL && socket->parent() == this)
@@ -227,67 +361,85 @@ void Game::~Game() {
     free(player_white);
   if (player_black != NULL)
     free(player_black);
+  if (replay_timer != NULL)
+    free(replay_timer);
 }
 
 //TODO OK
 /** we are founding a completely new game */
-void Game::gameRemote(QHostAddress addr, int port, bool white) {
-  if (isRunning()) return;
-
-  initXml();
-  newSocket(addr, port);
+bool Game::gameRemote(QHostAddress addr, int port, Player::color_t color) {
+  if (isRunning()) return false;
 
   /** set who will be white and who black */
-  if (white) {
+  if (color == Player::COLOR_WHITE) {
     player_white->local = true;
     player_black->local = false;
   }
-  else {
+  else if (color == Player::COLOR_BLACK) {
     player_white->local = false;
     player_black->local = true;
   }
+  else {
+    err_queue.append("ERR: No color given!");
+    return false;
+  }
 
-  /** initiate communication */
-  socket->write(NetCmdParser::TOK_INVITE + QString::number(port) +
-      " " + player_white->name);
-  game_state = STATE_INVITE_DISPATCH;
-}
+  initXml();
+  prepareNewSocket(addr, port);
+  game_state = STATE_WAIT_FOR_CONNECTION;
 
-/** we are connecting to a "running" game */
-void Game::gameRemote(QTcpSocket *socket) {
-  if (isRunning()) return;
-
-  //FIXME we should receive XML
-  /** handle newly arrived msg */
-  connect(socket, SIGNAL(readyRead()), this, SLOT(readReply()));
-  /** handle disconnect */
-  connect(socket, SIGNAL(disconnected()), this, SLOT(gotDisconnected()));
+  return true;
 }
 
 //TODO OK
-void Game::gameLocal() {
-  if (isRunning()) return;
+/** we are connecting to a "running" game */
+bool Game::gameRemote(QTcpSocket *socket) {
+  if (isRunning()) return false;
+
+  connect(socket, SIGNAL(readyRead()), this, SLOT(gotNewData()));
+  connect(socket, SIGNAL(disconnected()), this, SLOT(gotDisconnected()));
+  connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
+      this, SLOT(gotDisconnected()));
+
+  game_state = STATE_CAN_START;
+  return true;
+}
+
+//TODO OK
+bool Game::gameLocal(void) {
+  if (isRunning()) return false;
 
   initXml();
   game_state = STATE_CAN_START;
+
+  return true;
 }
 
 /** new game from file => jump to end (interpret moves between, of course) */
-bool Game::gameFromFile(QString s) {
+bool Game::gameFromFile(QString s, Player::color_t color) {
   if (isRunning()) return false;
+
+  //FIXME dojet pomoci move na uplny konec!
 
   filepath = s;
   QFile f(filepath);
-  QTextStream stream(&f, QIODevice::ReadWrite | QIODevice::Text);
+  QTextStream stream(&f, QIODevice::Read | QIODevice::Text);
 
   /** try to parse the file as ICP syntax (first character must be '1') */
   if (! stream.atEnd() && stream.seek(0) && stream.read(1) == "1") {
     stream.seek(0);
     initXml();
-    if (! loadFromIcpSyntax(stream.readAll()))
-      return false;
 
-    gameLocal();
+    if (! loadFromIcpSyntax(stream.readAll())) {
+      doc->clear();  /**< tidy up garbage from above */
+      return false;
+    }
+
+    /** ICP syntax can store only local games */
+    if (! gameLocal()) {
+      doc->clear();  /**< tidy up garbage from above */
+      return false;
+    }
   }
   /** try to parse the file as XML */
   else if (f.open() && doc->setContent(&f)) {
@@ -295,41 +447,70 @@ bool Game::gameFromFile(QString s) {
     if (doc->documentElement().firstChildElement(XML_STR_DRAUGHTS).
         firstChildElement(XML_STR_GAME).
         attributeNode(XML_STR_TYPE) == XML_STR_LOCAL) {
-      gameLocal();
+      if (! gameLocal()) {
+        doc->clear();  /**< tidy up garbage from above */
+        return false;
+      }
     }
     /** network game */
     else {
-      //FIXME zalozi jakoby "novou" hru, ale skoci
-      //  na jiny game_state, protoze bude na tahu
-      //  nekdo jiny nez pri nove hre
-      t
+      /** the remote side will have to load my config */
+      remote_will_load = true;
+
+      if (! gameRemote(QHostAddress addr, int port, color)) {
+        remote_will_load = false;
+        doc->clear();  /**< tidy up garbage from above */
+        return false;
+      }
     }
-    //FIXME get the type ()
-    game_state = ...;
-    f.close();
   }
   else {
-    //FIXME
-    err_queue.append("");
+    err_queue.append("ERR: Bad file format (only XML or ICP syntax supported)!");
+    return false;
   }
+
+  return true;
 }
 
 /** replay loaded game */
-bool Game::gameFromFile(QString s, replay_t replay) {
+bool Game::gameFromFile(QString s, bool timed) {
   if (isRunning()) return false;
 
-  replay == REPLAY_TIMED;
-  t
+  filepath = s;
+  QFile f(filepath);
+  QTextStream stream(&f, QIODevice::Read | QIODevice::Text);
+
+  /** try to parse the file as ICP syntax (first character must be '1') */
+  if (! stream.atEnd() && stream.seek(0) && stream.read(1) == "1") {
+    stream.seek(0);
+    initXml();
+
+    if (! loadFromIcpSyntax(stream.readAll())) {
+      doc->clear();  /**< tidy up garbage from above */
+      return false;
+    }
+  }
+  /** try to parse the file as XML */
+  else if (! (f.open() && doc->setContent(&f)) ) {
+    err_queue.append("ERR: Bad file format (only XML or ICP syntax supported)!");
+    return false;
+  }
+
+  //FIXME pointer to move index for forward/backward...
+
+  prepareNewTimer();
+  game_state = REPLAY_STEP;
+  return true;
 }
 
 //TODO OK
-bool Game::isRunning() {
+bool Game::isRunning(void) {
   return game_state != STATE_PRE_INIT &&
          game_state != STATE_END;
 }
 
 //TODO OK
-bool Game::isLocal() {
+bool Game::isLocal(void) {
   return socket == NULL;
 }
 
@@ -413,7 +594,11 @@ err_t Game::move(unsigned int srcx, unsigned int srcy,
   //diagonal -> the diff(x) and diff(y) must be same for src and dst
   board[dsty][dstx] = board[srcy][srcx];
   board[srcy][srcx] = MEN_NONE;
-  appendMoveToXml(srcx, srcy, dstx, dsty);
+  bool kicked = true;//FIXME
+
+  appendMoveToXml(srcx, srcy, dstx, dsty, kicked);
+
+  if (kicked) getPlayerFromCoord(dstx, dsty)->kicked ++;
 
   last_move_dst.first  = dstx;
   last_move_dst.second = dsty;
@@ -424,6 +609,7 @@ err_t Game::move(unsigned int srcx, unsigned int srcy,
   else
     game_state = MOVE_BLACK;
 
+  Q_EMIT refresh();
   return ERR_OK;
 }
 
@@ -537,10 +723,11 @@ bool showPossibleMoves(unsigned int _x, unsigned int _y, bool do_emit = true) {
     }
   }
 
+  //FIXME emit
+
   return can_jump;
 }
 
-//TODO OK
 void hidePossibleMoves(bool do_emit = true) {
   for (int i = 0; i < board.size(); ++i) {
     for(int j = 0; j < board[i].size(); ++j) {
@@ -549,10 +736,11 @@ void hidePossibleMoves(bool do_emit = true) {
     }
   }
 
+//FIXME emit
   possible_move_present = false;
 }
 
-void Game::adviceMove() {
+void Game::adviceMove(void) {
   /** the previous move wasn't complete (jump necessary) */
   if (showPossibleMoves(last_move_dst.first, last_move_dst.second)) {
     /** make the first found possible move the advice */
@@ -590,34 +778,71 @@ void Game::adviceMove() {
   }
 }
 
+/**
+ * @param timeout in ms; (if < 0, the default timeout will be set)
+ */
 //TODO OK
 void Game::setReplayTimeout(int t) {
-  replay_delay = t;
+  if (t < 0)
+    replay_delay = DEFAULT_TIMEOUT;
+  else
+    replay_delay = t;
 
-  if (replay_timer.isActive())
-    /** start or restart timer */
-    replay_timer.start(replay_delay);
+  if (replay_timer != NULL)
+    /** setting interval takes immediate effect (also on an active timer) */
+    replay_timer->setInterval(replay_delay);
 }
 
-bool Game::replayMoveForward(int i) {
-  while (i < )
+bool Game::replayMoveForward(unsigned int i) {
+  if (! isReplaying()) return false;
+
+  for (int x = 0; x < i; ++x) {
+    if (! canMove())
+      /** prevent empty looping */
+      break;
+  }
 }
 
-bool Game::replayMoveBackward(int i) {
+bool Game::replayMoveBackward(unsigned int i) {
+  if (! isReplaying()) return false;
+
+  t
 }
 
-bool Game::replayMovePause(void) {
-}
+/**
+ * our timer measures the time always in multiples of replay_delay and
+ * thus it will step to the "last" multiple in case of pause and start
+ * from there in case of resume */
+//TODO OK
+bool Game::replayMoveToggle(void) {
+  if (! isReplaying()) return false;
 
-bool Game::replayMoveStop(void) {
+  Q_ASSERT(replay_timer != NULL);
+
+  if replay_timer->isPaused()
+    replay_timer->resume();
+  else
+    replay_timer->pause();
+
+  game_state = STATE_REPLAY_TIMED;
+  return true;
 }
 
 //TODO OK
+bool Game::replayMoveStop(void) {
+  if (! isReplaying()) return false;
+
+  if (replay_timer != NULL)
+    replay_timer->stop();
+
+  game_state = STATE_REPLAY_STEP;
+  return true;
+}
+
 bool Game::isReplaying(void) {
   switch (game_state) {
       case STATE_REPLAY_STEP:
       case STATE_REPLAY_TIMED:
-      case STATE_REPLAY_PAUSE:
       case STATE_REPLAY_STOP:
         return true;
       default:
@@ -626,12 +851,12 @@ bool Game::isReplaying(void) {
 }
 
 //TODO OK
-Player *Game::getPlayerWhite() {
+Player *Game::getPlayerWhite(void) {
   return player_white;
 }
 
 //TODO OK
-Player *Game::getPlayerBlack() {
+Player *Game::getPlayerBlack(void) {
   return player_black;
 }
 
@@ -661,15 +886,23 @@ void Game::syncXml(void) {
 }
 
 //TODO OK
-QString Game::getXmlStr() {
+QString Game::getXmlStr(void) {
   Q_ASSERT(doc != NULL);
 
   syncXml();
   return doc->toString();
 }
 
-QString Game::getIcpSyntaxStr(void) {
+/**
+ * @param true: get everything from beginning to the pointer
+ *        false: get all moves
+ */
+QString Game::getIcpSyntaxStr(bool to_current_move_pointer = false) {
   Q_ASSERT(doc != NULL);
+
+  if (to_current_pointer) {
+    ...;
+  }
 
   syncXml();
   l = doc->getList("move");
@@ -681,7 +914,7 @@ QString Game::getIcpSyntaxStr(void) {
   return ;
 }
 
-QString Game::getError() {
+QString Game::getError(void) {
   QString s;
   bool first_iter = true;
 
@@ -698,28 +931,27 @@ QString Game::getError() {
 }
 
 //TODO OK
-QHostAddress Game::getRemoteAddr() {
+QHostAddress Game::getRemoteAddr(void) {
   Q_ASSERT(socket != NULL);
   return socket->peerAddress();
 }
 
 //TODO OK
-int Game::getRemotePort() {
+int Game::getRemotePort(void) {
   Q_ASSERT(socket != NULL);
   return socket->peerPort();
 }
 
-void Game::gotDisconnected() {
-  //QTcpSocket* socket = qobject_cast<QTcpSocket*>( this->sender() );
-  //if (this->sender()->parent != this)
-  //FIXME this should also work for locally newed socket
-  socket->deleteLater();
-  running = false;
+/** received only once */
+void Game::gotConnected(void) {
+  /** initiate communication */
+  socket->write(NetCmdParser::TOK_INVITE + QString::number(port) + " " +
+      (player_white->local) ? player_white->name : player_black->name);
+  socket->flush();
+  game_state = STATE_INVITE_DISPATCH;
 }
 
-void Game::gotConnected() { }
-
-void Game::readReply() {
+void Game::gotNewData(void) {
   // get the socket from the sender object
   QTcpSocket* soc = qobject_cast<QTcpSocket*>(this->sender());
   QString s(socket->readAll());
@@ -738,6 +970,18 @@ void Game::readReply() {
   soc->write(QByteArray);
   soc->flush();
   soc->errorString();
+}
+
+void Game::gotDisconnected(void) {
+  //QTcpSocket* socket = qobject_cast<QTcpSocket*>( this->sender() );
+  //if (this->sender()->parent != this)
+  //FIXME this should also work for locally newed socket
+  socket->deleteLater();
+  running = false;
+}
+
+void Game::gotTimeout(void) {
+  //FIXME move forward by 1; refresh
 }
 
 void Game::refresh(void) {

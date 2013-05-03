@@ -5,12 +5,23 @@
 
 #include "app.h"
 
+//FIXME check all methods called from this file if the have at
+//  the begining isRunning() or isReplaying() check
+
+App::prepareNewGame(void) {
+  if (g != NULL) delete g;
+
+  g = new Game();
+  connect(g, SIGNAL(refresh(void)), this, SLOT(schedule_refresh(void)));
+}
+
 App::App(QCoreApplication *_parent) :
   QObject(_parent),
   qtout(stdout, QIODevice::WriteOnly | QIODevice::Text),
   qter(stderr, QIODevice::WriteOnly | QIODevice::Text),
-  qtin(stdin, QIODevice::ReadOnly)
-{
+  qtin(stdin, QIODevice::ReadOnly),
+  g(NULL) {
+
   /** ignore arguments */
   //QStringList sl = par->arguments();
   ////QList<QString>::iterator
@@ -19,9 +30,10 @@ App::App(QCoreApplication *_parent) :
   //  qtout << (*i).toLocal8Bit().constData() << endl;
   //}
 
+  new_conn_handled = true;
   server = new QTcpServer(this);
-  /** we will react on new connections in a user-loop
-      connect(server, SIGNAL(newConnection()), this, SLOT(gotConnection())); */
+  /** we will react on new connections in a user-loop */
+  connect(server, SIGNAL(newConnection()), this, SLOT(gotConnection()));
 
   /** listen on all interfaces; set "random" port (everything else has
       default values - e.g. max connections 30) */
@@ -40,11 +52,10 @@ App::App(QCoreApplication *_parent) :
   // not needed (notifier is set enabled by default)
   // notifier->setEnabled(true);
 
-  g = new Game();
-  connect(g, SIGNAL(refresh(void)), this, SLOT(schedule_refresh(void)));
+  prepareNewGame();
 }
 
-App::~App() {
+App::~App(void) {
   if (g        != NULL) delete g;
   if (server   != NULL) delete server;
   if (notifier != NULL) delete notifier;
@@ -71,10 +82,10 @@ void App::refresh(void) {
 
   qtout <<
     TERM_FG_MEN_WHITE << "o" << TERM_C_RESET <<
-    " kicked out: " << QString::number(g->getPlayerWhite()->getKickedCount()) <<
+    " kicked out: " << QString::number(g->getPlayerWhite()->kicked) <<
     " [" << p1.name << "]" << endl <<
     TERM_FG_MEN_BLACK << "o" << TERM_C_RESET <<
-    " kicked out: " << QString::number(g->getPlayerBlack()->getKickedCount()) <<
+    " kicked out: " << QString::number(g->getPlayerBlack()->kicked) <<
     " [" << p1.name << "]" << endl <<
     endl;
 
@@ -131,12 +142,13 @@ void App::refresh(void) {
   }
 
   /** in CLI we can handle only 1 game at a time */
-  if (! g->isRunning() && server.hasPendingConnections()) {
-    g->socket = server.nextPendingConnection();
-    for (;) {
+  if (! g->isRunning() && new_conn_handled) {
+    new_conn_handled = false;
+
+    for (;;) {
       qtout << "Connection request from " <<
-        socket->peerAddress().toString() << ":" <<
-        socket->peerPort().toString() << ", accept? [y/n] " << flush;
+        g->socket->peerAddress().toString() << ":" <<
+        g->socket->peerPort().toString() << ", accept? [y/n] " << flush;
 
       /** read one line of user input */
       line = qtin.readLine();
@@ -146,7 +158,6 @@ void App::refresh(void) {
       }
       else if (line == "n") {
         g->socket->deleteLater();
-        //FIXME
         g->socket = NULL;
         schedule_refresh();
         return;
@@ -166,33 +177,33 @@ void App::refresh(void) {
   if (cmd_l.at(0) == "h") {
     qtout <<
       "BASIC COMMANDS" << endl <<
-      "  h                this help" << endl <<
-      "  q                quit" << endl <<
-      "  aw               alias of white player" << endl <<
-      "  ab               alias of black player" << endl <<
-      "  n                new game" << endl <<
-      "  nn <host> <port> new network game (white)" << endl <<
-      "  l <file>         load & play game from file (note it could be local or network game)" << endl <<
-      "  r <file>         replay game from file" << endl <<
-      "  rt <file>        replay timed game from file" << endl <<
-      "  s [<file>]       save game to file" << endl <<
-      "  m c3 b4          droughtsmen/king move" << endl <<
-      "  pm c3            show possible moves" << endl <<
-      "  hm               help with move (using AI)" << endl <<
-      "  <CR>             refresh (needed e.g-> for seeing new connection requests)" << endl <<
+      "  h                     this help" << endl <<
+      "  q                     quit game only" << endl <<
+      "  q!                    quit program" << endl <<
+      "  aw                    alias of white player" << endl <<
+      "  ab                    alias of black player" << endl <<
+      "  n                     new game" << endl <<
+      "  nn <host> <port> w|b  new network game" << endl <<
+      "  l <file> [w|b]        load & play game from file; w ~ white, b ~ black" << endl <<
+      "                          (color choice is needed for a network game)" << endl <<
+      "  r <file>              replay game from file" << endl <<
+      "  s [<file>]            save game to file" << endl <<
+      "  m c3 b4               droughtsmen/king move" << endl <<
+      "  pm c3                 show possible moves" << endl <<
+      "  hm                    help with move (using AI)" << endl <<
+      "  <CR>                  refresh (needed e.g. for seeing new connection requests)" << endl <<
       "REPLAY COMMANDS" << endl <<
-      "  bw               backwards" << endl <<
-      "  fw               forwards" << endl <<
-      "  p                pause/play" << endl <<
-      "  d                set delay" << endl <<
-      "  q                quit and close this game" << endl;
+      "  bw [<N steps>]        backwards (by default 1 step)" << endl <<
+      "  fw [<N steps>]        forwards (by default 1 step)" << endl <<
+      "  p                     pause/play" << endl <<
+      "  d [<delay>]           set delay in ms (if no number given, set to default)" << endl
+      "  st                    stop running timed replay (if any)" << endl;
   }
   else if (cmd_l.at(0) == "q") {
-    /** are we in the replay-mode? */
-    if (g->isReplaying())
-      delete g;
-    else
-      QTimer::singleShot(0, this, SLOT(finished(void)));
+    prepareNewGame();
+  }
+  else if (cmd_l.at(0) == "q!") {
+    QTimer::singleShot(0, this, SLOT(finished(void)));
   }
   else if (cmd_l.at(0) == "aw") {
     g->getPlayerWhite()->name = cmd_l.at(1);
@@ -207,10 +218,23 @@ void App::refresh(void) {
     schedule_refresh();
   }
   else if (cmd_l.at(0) == "nn") {
-    if (cmd_l.size() == 3) {
+    if (cmd_l.size() == 4) {
+      Player::color_t cl = Player::COLOR_DONT_KNOW;
+
+      if (cmd_l.at(3) == "w") {
+        cl = Player::COLOR_WHITE;
+      }
+      else if (cmd_l.at(3) == "b") {
+        cl = Player::COLOR_BLACK;
+      }
+      else {
+        qterr << "ERR: Invalid player color: " << cmd_l.at(3) << endl;
+        return;
+      }
+
       QHostAddress addr;
       if (addr.setAddress(cmd_l.at(1))) {
-        if (! g->gameRemote(addr, std::stoul(cmd_l.at(2))))
+        if (! g->gameRemote(addr, std::stoul(cmd_l.at(2)), cl))
           qterr << "ERR: " << g->getError() << endl;
       }
       else {
@@ -219,22 +243,37 @@ void App::refresh(void) {
     }
   }
   else if (cmd_l.at(0) == "l") {
-    if (cmd_l.size() == 2) {
-      if (! g->gameFromFile(cmd_l.at(1)))
+    Player::color_t cl = Player::COLOR_DONT_KNOW;
+
+    if (cmd_l.size() == 3) {
+      if (cmd_l.at(3) == "w") {
+        cl = Player::COLOR_WHITE;
+      }
+      else if (cmd_l.at(3) == "b") {
+        cl = Player::COLOR_BLACK;
+      }
+      else {
+        qterr << "ERR: Invalid player color: " << cmd_l.at(3) << endl;
+        return;
+      }
+    }
+
+    if (cmd_l.size() == 2 || cmd_l.size() == 3) {
+      if (! g->gameFromFile(cmd_l.at(1), cl))
         qterr << "ERR: " << g->getError() << endl;
       schedule_refresh();
     }
   }
   else if (cmd_l.at(0) == "r") {
     if (cmd_l.size() == 2) {
-      if (! g->gameFromFile(cmd_l.at(1), REPLAY_STEP))
+      if (! g->gameFromFile(cmd_l.at(1), false))
         qterr << "ERR: " << g->getError() << endl;
       schedule_refresh();
     }
   }
   else if (cmd_l.at(0) == "rt") {
     if (cmd_l.size() == 2) {
-      if (! g->gameFromFile(cmd_l.at(1), REPLAY_TIMED))
+      if (! g->gameFromFile(cmd_l.at(1), true))
         qterr << "ERR: " << g->getError() << endl;
       schedule_refresh();
     }
@@ -275,15 +314,65 @@ void App::refresh(void) {
   }
   else if (cmd_l.at(0) == "pm") {
     if (cmd_l.size() == 2) {
-    IcpSyntaxParser::pair_uint_t coord =
-      IcpSyntaxParser::strCoordToUint(cmd_l.at(1));
-    g->showPossibleMoves(coord.first, coord.second);
-    schedule_refresh();
+      IcpSyntaxParser::pair_uint_t coord =
+        IcpSyntaxParser::strCoordToUint(cmd_l.at(1));
+      g->showPossibleMoves(coord.first, coord.second);
+      schedule_refresh();
     }
   }
   else if (cmd_l.at(0) == "hm") {
     g->adviceMove();
     schedule_refresh();
+  }
+  else if (cmd_l.at(0) == "bw") {
+    int steps = 1;
+    bool ok;
+
+    if (cmd_l.size() == 2) {
+      delay = QString(cmd_l.at(1)).toUInt(&ok);
+
+      if (! ok) {
+        qterr << "ERR: Unsigned integer expected." << endl;
+        return;
+      }
+    }
+
+    g->replayMoveForward(steps);
+  }
+  else if (cmd_l.at(0) == "fw") {
+    int steps = 1;
+    bool ok;
+
+    if (cmd_l.size() == 2) {
+      delay = QString(cmd_l.at(1)).toUInt(&ok);
+
+      if (! ok) {
+        qterr << "ERR: Unsigned integer expected." << endl;
+        return;
+      }
+    }
+
+    g->replayMoveBackward(steps);
+  }
+  else if (cmd_l.at(0) == "p") {
+    g->replayMoveToggle();
+  }
+  else if (cmd_l.at(0) == "d") {
+    int timeout = -1;  /** will set the default value */
+
+    if (cmd_l.size() == 2) {
+      timeout = QString(cmd_l.at(1)).toUInt(&ok);
+
+      if (! ok) {
+        qterr << "ERR: Unsigned integer expected." << endl;
+        return;
+      }
+    }
+
+    g->setReplayTimeout(timeout);
+  }
+  else if (cmd_l.at(0) == "st") {
+    g->replayMoveStop();
   }
   /** <CR> => refresh */
   else if (! cmd_l.at(0).isEmpty()) {
@@ -309,6 +398,14 @@ void App::handleInput(void) {
 }
 
 void App::gotConnection() {
+  /** allow only one connection at a time */
+  if (! new_conn_handled) return;
+
+  //FIXME
+  if (server->hasPendingConnections()) {
+    g->socket = server->nextPendingConnection();
+  }
+
   // FIXME
   //QTcpServer* ser = qobject_cast<QTcpServer *>(this->sender());
   QTcpServer* ser = server;
@@ -324,4 +421,6 @@ void App::gotConnection() {
     // this could occur when the initiator disconnects really fast
     eout << "no pending connections" << endl;
   }
+
+  new_conn_handled = false;
 }
