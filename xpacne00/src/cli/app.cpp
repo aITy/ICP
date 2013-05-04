@@ -337,7 +337,7 @@ void App::refresh(void) {
       }
     }
 
-    g->replayMoveForward(steps);
+    g->replayMove(steps, true);
   }
   else if (cmd_l.at(0) == "fw") {
     int steps = 1;
@@ -352,7 +352,7 @@ void App::refresh(void) {
       }
     }
 
-    g->replayMoveBackward(steps);
+    g->replayMove(steps, false);
   }
   else if (cmd_l.at(0) == "p") {
     g->replayMoveToggle();

@@ -35,7 +35,7 @@ class QTimerImproved : public QTimer {
 
 class IcpSyntaxParser {
   public:
-    typedef QPair<unsigned int, unsigned int> pair_uint_t;
+    typedef QPair<int, int> pair_int_t;
     typedef QPair<QString, QString> pair_str_t;
     pair_uint_t strCoordToUint(QString);
     pair_str_t intToStrCoord(unsigned int, unsigned int);
@@ -107,11 +107,6 @@ class Game : public QObject {
   Q_OBJECT
 
   private:
-    typedef enum {
-      move_xml_backwards,
-      move_xml_forwards,
-    } move_xml_dir_t;
-
     /** the whole game XML tree including history */
     QDomDocument *doc;
     QTcpSocket *socket;
@@ -128,11 +123,11 @@ class Game : public QObject {
     bool remote_will_load;
 
     /** used for checking of possible moves before a user a move is processed */
-    IcpSyntaxParser::pair_uint_t last_move_dst;
-    IcpSyntaxParser::pair_uint_t possible_jump;
-    bool possible_move_present;
-    /** for replay mode: pointer to (index of) item with the current move */
-    int current_move_pointer;
+    IcpSyntaxParser::pair_int_t last_move_dst;
+    IcpSyntaxParser::pair_int_t possible_jump;
+    QPair<int, int> possible_move_present;
+    /** for replay mode: index of item with the currently applied move */
+    int current_move_index;
 
     QTimer *replay_timer;
     int replay_delay;
@@ -141,13 +136,15 @@ class Game : public QObject {
     /** create a new document template if none is existing yet */
     void initXml(void);
     void appendMoveToXml(unsigned int, unsigned int, unsigned int, unsigned int);
-    /** returns true if the move was successful */
-    bool moveFromXml(move_xml_dir_t);
+    bool moveFromXml(bool);
     void syncXml(void);
     bool loadFromIcpSyntax(QString);
     void prepareNewSocket(QHostAddress, int);
     void prepareNewTimer(void);
     Player *getPlayerFromCoord(unsigned int, unsigned int);
+    bool isBlackBox(unsigned int, unsigned int);
+    bool isInBoundaries(unsigned int, unsigned int);
+    bool isBecomingAKing(unsigned int, unsigned int, bool);
 
   public:
     typedef enum {
@@ -187,24 +184,33 @@ class Game : public QObject {
       STATE_EXIT_RECEIVE,
       STATE_MOVE_WHITE,
       STATE_MOVE_BLACK,
-      //FIXME
       STATE_REPLAY_STEP,  /**< accepting user steps */
       STATE_REPLAY_TIMED,
-      //STATE_REPLAY_PAUSE,
       STATE_REPLAY_STOP,
       STATE_END,  /**< disconnected, exit, error, etc. */
     } state_t;
 
-    const char[] XML_STR_DRAUGHTS = "draughts";
-    const char[] XML_STR_GAME     = "game";
-    const char[] XML_STR_TYPE     = "type";
-    const char[] XML_STR_LOCAL    = "local";
-    const char[] XML_STR_NETWORK  = "network";
-    const char[] XML_STR_HOST     = "host";
-    const char[] XML_STR_PORT     = "port";
-    const char[] XML_STR_PLAYERS  = "players";
-    const char[] XML_STR_WHITE    = "white";
-    const char[] XML_STR_BLACK    = "black";
+    const char[] XML_STR_DRAUGHTS      = "draughts";
+    const char[] XML_STR_GAME          = "game";
+    const char[] XML_STR_TYPE          = "type";
+    const char[] XML_STR_LOCAL         = "local";
+    const char[] XML_STR_NETWORK       = "network";
+    const char[] XML_STR_HOST          = "host";
+    const char[] XML_STR_PORT          = "port";
+    const char[] XML_STR_PLAYERS       = "players";
+    const char[] XML_STR_WHITE         = "white";
+    const char[] XML_STR_BLACK         = "black";
+    const char[] XML_STR_MOVES         = "moves";
+    const char[] XML_STR_MOVE          = "move";
+    const char[] XML_STR_SRCX          = "srcx";
+    const char[] XML_STR_SRCY          = "srcy";
+    const char[] XML_STR_DSTX          = "dstx";
+    const char[] XML_STR_DSTY          = "dsty";
+    const char[] XML_STR_KICKEDX       = "kickedx";
+    const char[] XML_STR_KICKEDY       = "kickedy";
+    const char[] XML_STR_BECAME_A_KING = "kicked";
+    const char[] XML_STR_TRUE          = "true";
+    const char[] XML_STR_FALSE         = "false";
 
     const int DEFAULT_TIMEOUT = 300;  /**< miliseconds */
 
@@ -236,11 +242,11 @@ class Game : public QObject {
     int move(unsigned int, unsigned int, unsigned int, unsigned int, bool);
     void showPossibleMoves(unsigned int, unsigned int, bool);
     void hidePossibleMoves(bool);
+    void hidePossibleMoves(int, int, bool);
     void adviceMove(void);
 
     void setReplayTimeout(int);
-    bool replayMoveForward(int);
-    bool replayMoveBackward(int);
+    bool replayMove(int, bool);
     bool replayMoveToggle(void);  /**< toggle pause/play */
     bool replayMoveStop(void);
     /** used e.g. for user input locking */
