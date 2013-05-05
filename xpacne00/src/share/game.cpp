@@ -96,61 +96,60 @@ IcpSyntaxParser::pair_uint_t IcpSyntaxParser::strCoordToUInt(QString s) {
 IcpSyntaxParser::pair_str_t IcpSyntaxParser::intToStrCoord(unsigned int x, unsigned int y) {
   Q_ASSERT(x + 'a' <= 'h');
   pair_str_t p(
-      //FIXME static_cast<char>
       QString(static_cast<char>(x + 'a')),
       QString::number(y +1));
   return p;
 }
 
 //TODO OK
-//NetCmdParser::NetCmdParser(QString _s) : last_cmd(NONE), s(_s) { }
+NetCmdParser::NetCmdParser(QString _s) : last_cmd(NONE), s(_s) { }
 
 //TODO OK
 NetCmdParser::tok_t NetCmdParser::getNextCmd() {
-  if (s.startsWith(NetCmdParser::TOK_INVITE)) {
-    s.remove(0, CONST_STR_LEN(NetCmdParser::TOK_INVITE));
+  if (s.startsWith(TOK::INVITE)) {
+    s.remove(0, CONST_STR_LEN(TOK::INVITE));
     return INVITE;
   }
-  else if (s.startsWith(NetCmdParser::TOK_INVITE_ACCEPT)) {
-    s.remove(0, CONST_STR_LEN(NetCmdParser::TOK_INVITE_ACCEPT));
+  else if (s.startsWith(TOK::INVITE_ACCEPT)) {
+    s.remove(0, CONST_STR_LEN(TOK::INVITE_ACCEPT));
     return INVITE_ACCEPT;
   }
-  else if (s.startsWith(NetCmdParser::TOK_INVITE_REJECT)) {
-    s.remove(0, CONST_STR_LEN(NetCmdParser::TOK_INVITE_REJECT));
+  else if (s.startsWith(TOK::INVITE_REJECT)) {
+    s.remove(0, CONST_STR_LEN(TOK::INVITE_REJECT));
     return INVITE_REJECT;
   }
-  else if (s.startsWith(NetCmdParser::TOK_GAME)) {
-    s.remove(0, CONST_STR_LEN(NetCmdParser::TOK_GAME));
+  else if (s.startsWith(TOK::GAME)) {
+    s.remove(0, CONST_STR_LEN(TOK::GAME));
 
-    if (s.startsWith(NetCmdParser::TOK_WHITE)) {
-      s.remove(0, CONST_STR_LEN(NetCmdParser::TOK_WHITE));
+    if (s.startsWith(TOK::WHITE)) {
+      s.remove(0, CONST_STR_LEN(TOK::WHITE));
       return WHITE;
     }
-    else if (s.startsWith(NetCmdParser::TOK_BLACK)) {
-      s.remove(0, CONST_STR_LEN(NetCmdParser::TOK_BLACK));
+    else if (s.startsWith(TOK::BLACK)) {
+      s.remove(0, CONST_STR_LEN(TOK::BLACK));
       return BLACK;
     }
 
-    if (s.startsWith(NetCmdParser::TOK_NEW)) {
-      s.remove(0, CONST_STR_LEN(NetCmdParser::TOK_NEW));
+    if (s.startsWith(TOK::NEW)) {
+      s.remove(0, CONST_STR_LEN(TOK::NEW));
       return NEW;
     }
-    else if (s.startsWith(NetCmdParser::TOK_LOAD)) {
-      s.remove(0, CONST_STR_LEN(NetCmdParser::TOK_LOAD));
+    else if (s.startsWith(TOK::LOAD)) {
+      s.remove(0, CONST_STR_LEN(TOK::LOAD));
       return LOAD;
     }
   }
-  else if (s.startsWith(NetCmdParser::TOK_GAME_ACCEPT)) {
+  else if (s.startsWith(TOK::GAME_ACCEPT)) {
     return GAME_ACCEPT;
   }
-  else if (s.startsWith(NetCmdParser::TOK_GAME_REJECT)) {
+  else if (s.startsWith(TOK::GAME_REJECT)) {
     return GAME_REJECT;
   }
-  else if (s.startsWith(NetCmdParser::TOK_MOVE)) {
-    s.remove(0, CONST_STR_LEN(NetCmdParser::TOK_MOVE));
+  else if (s.startsWith(TOK::MOVE)) {
+    s.remove(0, CONST_STR_LEN(TOK::MOVE));
     return MOVE;
   }
-  else if (s.startsWith(NetCmdParser::TOK_EXIT)) {
+  else if (s.startsWith(TOK::EXIT)) {
     return EXIT;
   }
 
@@ -187,6 +186,7 @@ bool Player::decKicked(void) {
   if (kicked <= 0) return false;
 
   kicked--;
+  return true;
 }
 
 //TODO OK
@@ -230,38 +230,38 @@ void Game::initXml(void) {
 void Game::appendMoveToXml(unsigned int srcx, unsigned int srcy,
     unsigned int dstx, unsigned int dsty,
     int kickedx, int kickedy, bool became_a_king) {
-  QDomElement el_move = doc->createElement(XML_STR_MOVE);
+  QDomElement el_move = doc->createElement(XML::STR_MOVE);
 
-  QDomAttr attr = doc->createAttribute(XML_STR_SRCX);
+  QDomAttr attr = doc->createAttribute(XML::STR_SRCX);
   attr.setValue(QString::number(srcx));
   el_move.setAttributeNode(attr);
 
-  attr = doc->createAttribute(XML_STR_SRCY);
+  attr = doc->createAttribute(XML::STR_SRCY);
   attr.setValue(QString::number(srcy));
   el_move.setAttributeNode(attr);
 
-  attr = doc->createAttribute(XML_STR_DSTX);
+  attr = doc->createAttribute(XML::STR_DSTX);
   attr.setValue(QString::number(dstx));
   el_move.setAttributeNode(attr);
 
-  attr = doc->createAttribute(XML_STR_DSTY);
+  attr = doc->createAttribute(XML::STR_DSTY);
   attr.setValue(QString::number(dsty));
   el_move.setAttributeNode(attr);
 
-  attr = doc->createAttribute(XML_STR_KICKEDX);
+  attr = doc->createAttribute(XML::STR_KICKEDX);
   attr.setValue(QString::number(kickedx));
   el_move.setAttributeNode(attr);
 
-  attr = doc->createAttribute(XML_STR_KICKEDY);
+  attr = doc->createAttribute(XML::STR_KICKEDY);
   attr.setValue(QString::number(kickedy));
   el_move.setAttributeNode(attr);
 
-  attr = doc->createAttribute(XML_STR_BECAME_A_KING);
-  attr.setValue(became_a_king ? XML_STR_TRUE : XML_STR_FALSE);
+  attr = doc->createAttribute(XML::STR_BECAME_A_KING);
+  attr.setValue(became_a_king ? XML::STR_TRUE : XML::STR_FALSE);
   el_move.setAttributeNode(attr);
 
-  doc->elementsByTagName(XML_STR_MOVES).at(0).appendChild(el_move);
-  //doc->elementsByTagName(XML_STR_MOVES).at(0).toElement().appendChild(el_move);
+  doc->elementsByTagName(XML::STR_MOVES).at(0).appendChild(el_move);
+  //doc->elementsByTagName(XML::STR_MOVES).at(0).toElement().appendChild(el_move);
 }
 
 /**
@@ -278,8 +278,8 @@ bool Game::moveFromXml(bool forward) {
     return false;
   }
 
-  QDomNode mv(doc->documentElement().firstChildElement(XML_STR_DRAUGHTS)
-  .firstChildElement(XML_STR_MOVES).firstChildElement(XML_STR_MOVE));
+  QDomNode mv(doc->documentElement().firstChildElement(XML::STR_DRAUGHTS)
+  .firstChildElement(XML::STR_MOVES).firstChildElement(XML::STR_MOVE));
 
   if (mv.isNull()) {
     if (! isReplaying()) game_state = STATE_CAN_START;
@@ -312,24 +312,24 @@ bool Game::moveFromXml(bool forward) {
 
   QDomNamedNodeMap map = mv.attributes();
 
-  unsigned int srcx = QString(map.namedItem(XML_STR_SRCX).nodeValue()).toUInt();
-  unsigned int srcy = QString(map.namedItem(XML_STR_SRCY).nodeValue()).toUInt();
-  unsigned int dstx = QString(map.namedItem(XML_STR_DSTX).nodeValue()).toUInt();
-  unsigned int dsty = QString(map.namedItem(XML_STR_DSTY).nodeValue()).toUInt();
-  unsigned int kickedx = QString(map.namedItem(XML_STR_KICKEDX).nodeValue()).toUInt();
-  unsigned int kickedy = QString(map.namedItem(XML_STR_KICKEDY).nodeValue()).toUInt();
+  unsigned int srcx = QString(map.namedItem(XML::STR_SRCX).nodeValue()).toUInt();
+  unsigned int srcy = QString(map.namedItem(XML::STR_SRCY).nodeValue()).toUInt();
+  unsigned int dstx = QString(map.namedItem(XML::STR_DSTX).nodeValue()).toUInt();
+  unsigned int dsty = QString(map.namedItem(XML::STR_DSTY).nodeValue()).toUInt();
+  unsigned int kickedx = QString(map.namedItem(XML::STR_KICKEDX).nodeValue()).toUInt();
+  unsigned int kickedy = QString(map.namedItem(XML::STR_KICKEDY).nodeValue()).toUInt();
 
   men_t kicked_men = MEN_NONE;
-  if (map.namedItem(XML_STR_KICKED).nodeValue() == XML_STR_WHITE)
+  if (map.namedItem(XML::STR_KICKED).nodeValue() == XML::STR_WHITE)
     kicked_men = MEN_WHITE;
-  else if (map.namedItem(XML_STR_KICKED).nodeValue() == XML_STR_WHITE_KING)
+  else if (map.namedItem(XML::STR_KICKED).nodeValue() == XML::STR_WHITE_KING)
     kicked_men = MEN_WHITE_KING;
-  else if (map.namedItem(XML_STR_KICKED).nodeValue() == XML_STR_BLACK)
+  else if (map.namedItem(XML::STR_KICKED).nodeValue() == XML::STR_BLACK)
     kicked_men = MEN_BLACK;
-  else if (map.namedItem(XML_STR_KICKED).nodeValue() == XML_STR_BLACK_KING)
+  else if (map.namedItem(XML::STR_KICKED).nodeValue() == XML::STR_BLACK_KING)
     kicked_men = MEN_BLACK_KING;
 
-  bool became_a_king = (map.namedItem(XML_STR_BECAME_A_KING).nodeValue() == XML_STR_TRUE) ? true : false;
+  bool became_a_king = (map.namedItem(XML::STR_BECAME_A_KING).nodeValue() == XML::STR_TRUE) ? true : false;
 
   if (kicked_men != MEN_NONE) {
     if (forward) {
@@ -420,7 +420,6 @@ bool Game::loadFromIcpSyntax(QString s) {
   QListIterator<QString> it(s.split("\n", QString::SkipEmptyParts));
 
   while (it.hasNext()) {
-    //FIXME toLocal8Bit().constData()
     QListIterator<QString> itt(it.next().split(" ", QString::SkipEmptyParts));
 
     while (itt.hasNext()) {
@@ -536,22 +535,25 @@ void Game::prepareNewTimer(void) {
 }
 
 //TODO OK
-//Game::Game(void) :
-//  board(8, QVector<men_t>(8, MEN_NONE)),
-//  socket(NULL),
-//  game_state(STATE_PRE_INIT),
-//  remote_server_port(-1),
-//  last_move_dst(-1, -1),
-//  possible_move_present(-1, -1),
-//  current_move_index(-1),
-//  replay_timer(NULL),
-//  replay_delay(DEFAULT_TIMEOUT)
-//{
-//  player_white = new Player("Player White");
-//  player_black = new Player("Player Black");
-//  doc = new QDomDocument("ICP_draughts_game_XML_document");
-//  remote_will_load = false;
-//}
+Game::Game(void) :
+  DEFAULT_TIMEOUT(300),
+  board(8, QVector<men_t>(8, MEN_NONE)),
+  socket(NULL),
+  game_state(STATE_PRE_INIT),
+  remote_server_port(-1),
+  last_move_dst(-1, -1),
+  possible_move_present(-1, -1),
+  current_move_index(-1),
+  replay_timer(NULL),
+  replay_delay(DEFAULT_TIMEOUT)
+{
+  player_white = new Player(this);
+  player_white->name = "Player White";
+  player_black = new Player(this);
+  player_black->name = "Player Black";
+  doc = new QDomDocument("ICP_draughts_game_XML_document");
+  remote_will_load = false;
+}
 
 //TODO OK
 Game::~Game(void) {
@@ -650,9 +652,9 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
   /** try to parse the file as XML */
   else if (doc->setContent(&f)) {
     /** local game */
-    if (doc->documentElement().firstChildElement(XML_STR_DRAUGHTS).
-        firstChildElement(XML_STR_GAME).
-        attributeNode(XML_STR_TYPE).value() == XML_STR_LOCAL) {
+    if (doc->documentElement().firstChildElement(XML::STR_DRAUGHTS).
+        firstChildElement(XML::STR_GAME).
+        attributeNode(XML::STR_TYPE).value() == XML::STR_LOCAL) {
       game_state = STATE_CAN_START;
 
       /** interpret all available moves */
@@ -669,13 +671,13 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
 
       if (! gameRemote(
             QHostAddress(doc->documentElement().
-              firstChildElement(XML_STR_DRAUGHTS).
-              firstChildElement(XML_STR_GAME).
-              attributeNode(XML_STR_HOST).value()),
+              firstChildElement(XML::STR_DRAUGHTS).
+              firstChildElement(XML::STR_GAME).
+              attributeNode(XML::STR_HOST).value()),
             QString(doc->documentElement().
-              firstChildElement(XML_STR_DRAUGHTS).
-              firstChildElement(XML_STR_GAME).
-              attributeNode(XML_STR_HOST).value()).toInt(), color)) {
+              firstChildElement(XML::STR_DRAUGHTS).
+              firstChildElement(XML::STR_GAME).
+              attributeNode(XML::STR_HOST).value()).toInt(), color)) {
         remote_will_load = false;
         doc->clear();  /**< tidy up garbage from setContent() */
         return false;
@@ -1161,22 +1163,22 @@ void Game::syncXml(void) {
   Q_ASSERT(doc != NULL);
 
   //FIXME test if the prefix documentElement() returns directly "draughts"
-  QDomElement e(doc->documentElement().firstChildElement(XML_STR_DRAUGHTS));
+  QDomElement e(doc->documentElement().firstChildElement(XML::STR_DRAUGHTS));
 
   /** /draughts/game[@type] */
-  e.firstChildElement(XML_STR_GAME).setAttribute(XML_STR_TYPE,
-      (socket == NULL) ? XML_STR_LOCAL : XML_STR_NETWORK);
+  e.firstChildElement(XML::STR_GAME).setAttribute(XML::STR_TYPE,
+      (socket == NULL) ? XML::STR_LOCAL : XML::STR_NETWORK);
   /** /draughts/game[@host] */
-  e.firstChildElement(XML_STR_GAME).setAttribute(XML_STR_HOST,
+  e.firstChildElement(XML::STR_GAME).setAttribute(XML::STR_HOST,
       (socket == NULL) ? "" : socket->peerAddress().toString());
   /** /draughts/game[@port] */
-  e.firstChildElement(XML_STR_GAME).setAttribute(XML_STR_PORT,
+  e.firstChildElement(XML::STR_GAME).setAttribute(XML::STR_PORT,
       (socket == NULL) ? "" : remote_server_port);
   /** /draughts/players/black */
-  e.firstChildElement(XML_STR_PLAYERS).firstChildElement(XML_STR_WHITE).
+  e.firstChildElement(XML::STR_PLAYERS).firstChildElement(XML::STR_WHITE).
     toText().setData(player_white->name);
   /** /draughts/players/white */
-  e.firstChildElement(XML_STR_PLAYERS).firstChildElement(XML_STR_BLACK).
+  e.firstChildElement(XML::STR_PLAYERS).firstChildElement(XML::STR_BLACK).
     toText().setData(player_black->name);
 }
 
@@ -1201,8 +1203,8 @@ QString Game::getIcpSyntaxStr(bool to_current_move_index) {
 //
 //  Q_ASSERT(doc != NULL);
 //  syncXml();
-//  QDomElement mv(doc->documentElement().firstChildElement(XML_STR_DRAUGHTS)
-//  .firstChildElement(XML_STR_MOVES).firstChildElement(XML_STR_MOVE));
+//  QDomElement mv(doc->documentElement().firstChildElement(XML::STR_DRAUGHTS)
+//  .firstChildElement(XML::STR_MOVES).firstChildElement(XML::STR_MOVE));
 //
 //  if (mv.isNull()) return res;
 //
@@ -1217,10 +1219,10 @@ QString Game::getIcpSyntaxStr(bool to_current_move_index) {
 //      }
 //      else {
 //        QDomNamedNodeMap map = mv.attributes();
-//        srcx = QString(map.namedItem(XML_STR_SRCX).nodeValue()).toUInt();
-//        srcy = QString(map.namedItem(XML_STR_SRCY).nodeValue()).toUInt();
-//        dstx = QString(map.namedItem(XML_STR_DSTX).nodeValue()).toUInt();
-//        dsty = QString(map.namedItem(XML_STR_DSTY).nodeValue()).toUInt();
+//        srcx = QString(map.namedItem(XML::STR_SRCX).nodeValue()).toUInt();
+//        srcy = QString(map.namedItem(XML::STR_SRCY).nodeValue()).toUInt();
+//        dstx = QString(map.namedItem(XML::STR_DSTX).nodeValue()).toUInt();
+//        dsty = QString(map.namedItem(XML::STR_DSTY).nodeValue()).toUInt();
 //        IcpSyntaxParser::pair_str_t tmp = IcpSyntaxParser::intToStrCoord(
 //              );
 //        mv = mv.nextSibling();
@@ -1267,12 +1269,20 @@ int Game::getRemotePort(void) {
   return socket->peerPort();
 }
 
+/**
+ * @return filepath of the last opened/saved file in this game
+ */
+QString Game::getFilePath(void) {
+  return filepath;
+}
+
 /** received only once */
 //TODO OK
 void Game::gotConnected(void) {
   /** initiate communication */
+  //FIXME toLocal8Bit().constData()
   socket->write(QString(
-        NetCmdParser::TOK_INVITE +
+        TOK::INVITE +
         QString::number(qobject_cast<QTcpServer *>(socket->parent())->serverPort()) +
         " " + ((player_white->local) ? player_white->name : player_black->name)
         ).toLocal8Bit());

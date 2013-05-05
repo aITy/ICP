@@ -10,17 +10,14 @@
 #include <QtNetwork>
 #include <QtXml>
 
-#if (__cplusplus > 199711L)
-/** deal with C++11 */
-#define CONST_STR(name, value) \
-  static constexpr char (name)[sizeof(value)] = (value)
-#else
-#define CONST_STR(name, value) \
-  static const char (name)[sizeof(value)] = (value)
-#endif
+//#if (__cplusplus > 199711L)
+///** deal with C++11 */
+//#define CONST_STR(name, value) static char (name)[sizeof(value)] = (value)
+//#else
+#define CONST_STR(name, value) const char (name)[sizeof(value)] = (value)
+//#endif
 
-#define CONST_STR_LEN(value) \
-  (sizeof(value) -1)
+#define CONST_STR_LEN(value) (sizeof(value) -1)
 
 /**
  * timer supporting pause
@@ -56,6 +53,21 @@ class IcpSyntaxParser {
     static pair_str_t intToStrCoord(unsigned int, unsigned int);
 };
 
+namespace TOK {
+  CONST_STR( INVITE       , "INVITE "        );
+  CONST_STR( INVITE_ACCEPT, "INVITE_ACCEPT " );
+  CONST_STR( INVITE_REJECT, "INVITE_REJECT"  );
+  CONST_STR( GAME         , "GAME "          );
+  CONST_STR( WHITE        , "WHITE "         );
+  CONST_STR( BLACK        , "BLACK "         );
+  CONST_STR( NEW          , "NEW "           );
+  CONST_STR( LOAD         , "LOAD "          );
+  CONST_STR( GAME_ACCEPT  , "GAME_ACCEPT"    );
+  CONST_STR( GAME_REJECT  , "GAME_REJECT"    );
+  CONST_STR( MOVE         , "MOVE "          );
+  CONST_STR( EXIT         , "EXIT"           );
+}
+
 class NetCmdParser {
   public:
     typedef enum {
@@ -73,19 +85,6 @@ class NetCmdParser {
       MOVE         ,
       EXIT         ,
     } tok_t;
-
-    CONST_STR( TOK_INVITE       , "INVITE "        );
-    CONST_STR( TOK_INVITE_ACCEPT, "INVITE_ACCEPT " );
-    CONST_STR( TOK_INVITE_REJECT, "INVITE_REJECT"  );
-    CONST_STR( TOK_GAME         , "GAME "          );
-    CONST_STR( TOK_WHITE        , "WHITE "         );
-    CONST_STR( TOK_BLACK        , "BLACK "         );
-    CONST_STR( TOK_NEW          , "NEW "           );
-    CONST_STR( TOK_LOAD         , "LOAD "          );
-    CONST_STR( TOK_GAME_ACCEPT  , "GAME_ACCEPT"    );
-    CONST_STR( TOK_GAME_REJECT  , "GAME_REJECT"    );
-    CONST_STR( TOK_MOVE         , "MOVE "          );
-    CONST_STR( TOK_EXIT         , "EXIT"           );
 
     NetCmdParser(QString);
     tok_t getNextCmd();
@@ -117,6 +116,33 @@ class Player {
     bool decKicked(void);
     int getKicked(void);
 };
+
+namespace XML {
+  CONST_STR( STR_DRAUGHTS     , "draughts"      );
+  CONST_STR( STR_GAME         , "game"          );
+  CONST_STR( STR_TYPE         , "type"          );
+  CONST_STR( STR_LOCAL        , "local"         );
+  CONST_STR( STR_NETWORK      , "network"       );
+  CONST_STR( STR_HOST         , "host"          );
+  CONST_STR( STR_PORT         , "port"          );
+  CONST_STR( STR_PLAYERS      , "players"       );
+  CONST_STR( STR_WHITE        , "white"         );
+  CONST_STR( STR_WHITE_KING   , "white_king"    );
+  CONST_STR( STR_BLACK        , "black"         );
+  CONST_STR( STR_BLACK_KING   , "black_king"    );
+  CONST_STR( STR_MOVES        , "moves"         );
+  CONST_STR( STR_MOVE         , "move"          );
+  CONST_STR( STR_SRCX         , "srcx"          );
+  CONST_STR( STR_SRCY         , "srcy"          );
+  CONST_STR( STR_DSTX         , "dstx"          );
+  CONST_STR( STR_DSTY         , "dsty"          );
+  CONST_STR( STR_KICKEDX      , "kickedx"       );
+  CONST_STR( STR_KICKEDY      , "kickedy"       );
+  CONST_STR( STR_KICKED       , "kicked"        );
+  CONST_STR( STR_BECAME_A_KING, "became-a-king" );
+  CONST_STR( STR_TRUE         , "true"          );
+  CONST_STR( STR_FALSE        , "false"         );
+}
 
 /**
  * class for one game counting 2 players
@@ -169,32 +195,7 @@ class Game : public QObject {
       STATE_END,  /**< disconnected, exit, error, etc. */
     } state_t;
 
-    CONST_STR( XML_STR_DRAUGHTS     , "draughts"      );
-    CONST_STR( XML_STR_GAME         , "game"          );
-    CONST_STR( XML_STR_TYPE         , "type"          );
-    CONST_STR( XML_STR_LOCAL        , "local"         );
-    CONST_STR( XML_STR_NETWORK      , "network"       );
-    CONST_STR( XML_STR_HOST         , "host"          );
-    CONST_STR( XML_STR_PORT         , "port"          );
-    CONST_STR( XML_STR_PLAYERS      , "players"       );
-    CONST_STR( XML_STR_WHITE        , "white"         );
-    CONST_STR( XML_STR_WHITE_KING   , "white_king"    );
-    CONST_STR( XML_STR_BLACK        , "black"         );
-    CONST_STR( XML_STR_BLACK_KING   , "black_king"    );
-    CONST_STR( XML_STR_MOVES        , "moves"         );
-    CONST_STR( XML_STR_MOVE         , "move"          );
-    CONST_STR( XML_STR_SRCX         , "srcx"          );
-    CONST_STR( XML_STR_SRCY         , "srcy"          );
-    CONST_STR( XML_STR_DSTX         , "dstx"          );
-    CONST_STR( XML_STR_DSTY         , "dsty"          );
-    CONST_STR( XML_STR_KICKEDX      , "kickedx"       );
-    CONST_STR( XML_STR_KICKEDY      , "kickedy"       );
-    CONST_STR( XML_STR_KICKED       , "kicked"        );
-    CONST_STR( XML_STR_BECAME_A_KING, "became-a-king" );
-    CONST_STR( XML_STR_TRUE         , "true"          );
-    CONST_STR( XML_STR_FALSE        , "false"         );
-
-    const int DEFAULT_TIMEOUT = 300;  /**< miliseconds */
+    const int DEFAULT_TIMEOUT;  /**< miliseconds */
 
     /**
      * the top left corner is always white
