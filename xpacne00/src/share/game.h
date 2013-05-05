@@ -10,8 +10,14 @@
 #include <QtNetwork>
 #include <QtXml>
 
+#if (__cplusplus > 199711L)
+/** deal with C++11 */
 #define CONST_STR(name, value) \
-  const char (name)[sizeof(value)] = (value)
+  static constexpr char (name)[sizeof(value)] = (value)
+#else
+#define CONST_STR(name, value) \
+  static const char (name)[sizeof(value)] = (value)
+#endif
 
 #define CONST_STR_LEN(value) \
   (sizeof(value) -1)
@@ -146,6 +152,8 @@ class Game : public QObject {
       STATE_PRE_INIT,
       STATE_CAN_START,
       STATE_RUNNING,
+      STATE_WHITE,
+      STATE_BLACK,
       STATE_WAIT_FOR_CONNECTION,
       STATE_INVITE_DISPATCH,  /**< question */
       STATE_INVITE_RECEIVE,  /**< answer */
@@ -220,7 +228,7 @@ class Game : public QObject {
     void adviceMove(void);
 
     void setReplayTimeout(int);
-    bool replayMove(int, bool);
+    bool replayMove(unsigned int, bool);
     bool replayMoveToggle(void);  /**< toggle pause/play */
     bool replayMoveStop(void);
     /** used e.g. for user input locking */

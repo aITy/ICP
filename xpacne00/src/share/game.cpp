@@ -333,28 +333,30 @@ bool Game::moveFromXml(bool forward) {
 
   if (kicked_men != MEN_NONE) {
     if (forward) {
-      if (getPlayerFromCoord(kickedx, kickedy)->incKicked()) {
-        if (! isReplaying()) game_state = STATE_RUNNING;
-      }
-      else {
-        if (! isReplaying()) game_state = STATE_END;
-      }
+      if (! getPlayerFromCoord(kickedx, kickedy)->incKicked())
+        if (! isReplaying())
+          game_state = STATE_END;
 
       board[kickedy][kickedx] = MEN_NONE;
     }
     else {
-      if (getPlayerFromCoord(kickedx, kickedy)->decKicked()) {
-        if (! isReplaying()) game_state = STATE_RUNNING;
-      }
-      else {
-        if (! isReplaying()) game_state = STATE_CAN_START;
-      }
+      if (! getPlayerFromCoord(kickedx, kickedy)->decKicked())
+        if (! isReplaying())
+          game_state = STATE_CAN_START;
 
       board[kickedy][kickedx] = kicked_men;
     }
   }
 
   if (forward) {
+    if (! isReplaying()) {
+      if (board[srcy][srcx] == MEN_WHITE ||
+          board[srcy][srcx] == MEN_WHITE_KING)
+        game_state = STATE_WHITE;
+      else
+        game_state = STATE_BLACK;
+    }
+
     if (became_a_king) {
       men_t tmp;
 
@@ -378,6 +380,14 @@ bool Game::moveFromXml(bool forward) {
     board[srcy][srcx] = MEN_NONE;
   }
   else {
+    if (! isReplaying()) {
+      if (board[dsty][dstx] == MEN_WHITE ||
+          board[dsty][dstx] == MEN_WHITE_KING)
+        game_state = STATE_WHITE;
+      else
+        game_state = STATE_BLACK;
+    }
+
     if (became_a_king) {
       men_t tmp;
 
@@ -845,7 +855,12 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
   appendMoveToXml(srcx, srcy, dstx, dsty, kickedx, kickedy, became_a_king);
 
   //FIXME what about network game?
-  if (game_state != STATE_END) game_state = STATE_RUNNING;
+  if (game_state != STATE_END) {
+    if (white_is_playing)
+      game_state = STATE_WHITE;
+    else
+      game_state = STATE_BLACK;
+  }
 
   if (became_a_king) {
     last_move_dst.first  = -1;
@@ -1006,32 +1021,36 @@ void Game::hidePossibleMoves(int x, int y, bool do_emit) {
 void Game::adviceMove(void) {
   if (! isRunning() || isReplaying()) return;
 
+  /** look at this genius AI */
+  if (game_state == STATE_CAN_START) {
+    board[0][1] = MEN_POSSIBLE_MOVE;
+    return;
+  }
+
   /** the previous move wasn't complete (jump necessary) */
-  if (game_state != STATE_CAN_START &&
+  if (last_move_dst.first != -1 &&
       showPossibleMoves(last_move_dst.first, last_move_dst.second, false)) {
     /** make the last found possible move the advice */
     hidePossibleMoves(possible_move_present.first,
                       possible_move_present.second, false);
   }
   else {
-    bool white_on_move;
-
-    if (game_state == STATE_CAN_START) {
-      white_on_move = true;
-    }
-    else {
-      if (board[last_move_dst.second][last_move_dst.first] == MEN_WHITE ||
-          board[last_move_dst.second][last_move_dst.first] == MEN_WHITE_KING)
-        white_on_move = false;
-      else
-        white_on_move = true;
-    }
-
     bool possible_move_found = false;
     for (int i = 0; i < board.size(); ++i) {
       for (int j = 0; j < board[i].size(); ++j) {
         /** is it white/black men/king? */
         if (isBlackBox(i, j) && board[j][i] != MEN_NONE) {
+          if (game_state == STATE_WHITE) {
+            if (board[j][i] == MEN_BLACK ||
+                board[j][i] == MEN_BLACK_KING)
+              continue;
+          }
+          else {
+            if (board[j][i] == MEN_WHITE ||
+                board[j][i] == MEN_WHITE_KING)
+              continue;
+          }
+
           showPossibleMoves(i, j, false);
 
           if (possible_move_present.first != -1) {
@@ -1071,13 +1090,14 @@ void Game::setReplayTimeout(int t) {
 }
 
 /**
+ * @param number of moves/steps to proceed
  * @return true if OK;
  */
 //TODO OK
 bool Game::replayMove(unsigned int i, bool forward) {
   if (! isReplaying()) return false;
 
-  for (int x = 0; x < i; ++x) {
+  for (int x = 0; x < int(i); ++x) {
     if (! moveFromXml(forward))
       /** prevent empty looping */
       break;
@@ -1093,7 +1113,7 @@ bool Game::replayMoveToggle(void) {
 
   if (replay_timer == NULL) return false;
 
-  if replay_timer->isPaused()
+  if (replay_timer->isPaused())
     replay_timer->resume();
   else
     replay_timer->pause();
@@ -1172,6 +1192,7 @@ QString Game::getXmlStr(void) {
  *        false: get all moves
  */
 QString Game::getIcpSyntaxStr(bool to_current_move_index) {
+  to_current_move_index = to_current_move_index;//FIXME delete
   QString res;
   //FIXME only for debug
   return res;
@@ -1230,6 +1251,8 @@ QString Game::getError(void) {
 
     s.append(err_queue.takeFirst());
   }
+
+  return s;
 }
 
 //TODO OK
@@ -1248,8 +1271,11 @@ int Game::getRemotePort(void) {
 //TODO OK
 void Game::gotConnected(void) {
   /** initiate communication */
-  socket->write(NetCmdParser::TOK_INVITE + QString::number(port) + " " +
-      (player_white->local) ? player_white->name : player_black->name);
+  socket->write(QString(
+        NetCmdParser::TOK_INVITE +
+        QString::number(qobject_cast<QTcpServer *>(socket->parent())->serverPort()) +
+        " " + ((player_white->local) ? player_white->name : player_black->name)
+        ).toLocal8Bit());
   socket->flush();
   game_state = STATE_INVITE_DISPATCH;
 }
