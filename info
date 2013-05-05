@@ -48,17 +48,17 @@ XML (musi zachovavat poradi pri parsovani!)
       <white>Alias 2</white>
     </players>
     <moves>
-      <move srcx="3" srcy="4" dstx="4" dsty="3" kickedx="4" kickedy="5" kicked="white" became_king="false">
-      <move srcx="3" srcy="5" dstx="5" dsty="3" kickedx="3" kickedy="7" kicked="black" became_king="false">
-      <move srcx="5" srcy="1" dstx="1" dsty="5" kickedx="2" kickedy="6" kicked="none" became_king="false">
-      <move srcx="7" srcy="3" dstx="3" dsty="7" kickedx="3" kickedy="4" kicked="white_king" became_king="false">
-      <move srcx="6" srcy="2" dstx="2" dsty="6" kickedx="3" kickedy="3" kicked="none" became_king="false">
-      <move srcx="4" srcy="6" dstx="6" dsty="4" kickedx="5" kickedy="3" kicked="black" became_king="false">
-      <move srcx="3" srcy="4" dstx="4" dsty="3" kickedx="7" kickedy="5" kicked="white" became_king="false">
-      <move srcx="3" srcy="5" dstx="5" dsty="3" kickedx="6" kickedy="7" kicked="black" became_king="false">
-      <move srcx="5" srcy="1" dstx="1" dsty="5" kickedx="4" kickedy="6" kicked="none" became_king="true">
-      <move srcx="7" srcy="3" dstx="3" dsty="7" kickedx="1" kickedy="4" kicked="none" became_king="false">
-      <move srcx="4" srcy="6" dstx="6" dsty="4" kickedx="0" kickedy="6" kicked="black_king" became_king="true">
+      <move srcx="3" srcy="4" dstx="4" dsty="3" kickedx="4" kickedy="5" kicked="white"      became-a-king="false">
+      <move srcx="3" srcy="5" dstx="5" dsty="3" kickedx="3" kickedy="7" kicked="black"      became-a-king="false">
+      <move srcx="5" srcy="1" dstx="1" dsty="5" kickedx="2" kickedy="6" kicked="none"       became-a-king="false">
+      <move srcx="7" srcy="3" dstx="3" dsty="7" kickedx="3" kickedy="4" kicked="white_king" became-a-king="false">
+      <move srcx="6" srcy="2" dstx="2" dsty="6" kickedx="3" kickedy="3" kicked="none"       became-a-king="false">
+      <move srcx="4" srcy="6" dstx="6" dsty="4" kickedx="5" kickedy="3" kicked="black"      became-a-king="false">
+      <move srcx="3" srcy="4" dstx="4" dsty="3" kickedx="7" kickedy="5" kicked="white"      became-a-king="false">
+      <move srcx="3" srcy="5" dstx="5" dsty="3" kickedx="6" kickedy="7" kicked="black"      became-a-king="false">
+      <move srcx="5" srcy="1" dstx="1" dsty="5" kickedx="4" kickedy="6" kicked="none"       became-a-king="true">
+      <move srcx="7" srcy="3" dstx="3" dsty="7" kickedx="1" kickedy="4" kicked="none"       became-a-king="false">
+      <move srcx="4" srcy="6" dstx="6" dsty="4" kickedx="0" kickedy="6" kicked="black_king" became-a-king="true">
     </moves>
   </draughts>
 

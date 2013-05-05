@@ -8,21 +8,30 @@
 
 #include <QtCore>
 #include <QtNetwork>
+#include <QtXml>
+
+#define CONST_STR(name, value) \
+  const char (name)[sizeof(value)] = (value)
+
+#define CONST_STR_LEN(value) \
+  (sizeof(value) -1)
 
 /**
  * timer supporting pause
  */
 class QTimerImproved : public QTimer {
+  Q_OBJECT
+
   private:
-    qint64 begin;
+    qint64 begin, end;
     int period;
     bool paused;
     bool singleShotScheduledInternally;
     bool originalWasSingleShot;
   private Q_SLOTS:
-    resendTimeout(void);
+    void resendTimeout(void);
   public:
-    void QTimerImproved(void);
+    QTimerImproved(QObject *par = 0);
     void start(void);
     void start(int);
     void stop(void);
@@ -30,28 +39,25 @@ class QTimerImproved : public QTimer {
     void resume(void);
     bool isPaused(void);
   Q_SIGNALS:
-    void newTimeout(void);
-}
+    void newTimeout();
+};
 
 class IcpSyntaxParser {
   public:
-    typedef QPair<int, int> pair_int_t;
+    typedef QPair<unsigned int, unsigned int> pair_uint_t;
     typedef QPair<QString, QString> pair_str_t;
-    pair_uint_t strCoordToUint(QString);
-    pair_str_t intToStrCoord(unsigned int, unsigned int);
+    static pair_uint_t strCoordToUInt(QString);
+    static pair_str_t intToStrCoord(unsigned int, unsigned int);
 };
 
 class NetCmdParser {
-  private:
-    cmd_t last_cmd;
-    QString s;
   public:
     typedef enum {
       NONE         ,
       INVITE       ,
       INVITE_ACCEPT,
       INVITE_REJECT,
-      GAME         ,
+      //GAME         ,  //FIXME
       WHITE        ,
       BLACK        ,
       NEW          ,
@@ -62,27 +68,33 @@ class NetCmdParser {
       EXIT         ,
     } tok_t;
 
-    const char[] TOK_INVITE        = "INVITE ";
-    const char[] TOK_INVITE_ACCEPT = "INVITE_ACCEPT ";
-    const char[] TOK_INVITE_REJECT = "INVITE_REJECT";
-    const char[] TOK_GAME          = "GAME ";
-    const char[] TOK_WHITE         = "WHITE ";
-    const char[] TOK_BLACK         = "BLACK ";
-    const char[] TOK_NEW           = "NEW ";
-    const char[] TOK_LOAD          = "LOAD ";
-    const char[] TOK_GAME_ACCEPT   = "GAME_ACCEPT";
-    const char[] TOK_GAME_REJECT   = "GAME_REJECT";
-    const char[] TOK_MOVE          = "MOVE ";
-    const char[] TOK_EXIT          = "EXIT";
+    CONST_STR( TOK_INVITE       , "INVITE "        );
+    CONST_STR( TOK_INVITE_ACCEPT, "INVITE_ACCEPT " );
+    CONST_STR( TOK_INVITE_REJECT, "INVITE_REJECT"  );
+    CONST_STR( TOK_GAME         , "GAME "          );
+    CONST_STR( TOK_WHITE        , "WHITE "         );
+    CONST_STR( TOK_BLACK        , "BLACK "         );
+    CONST_STR( TOK_NEW          , "NEW "           );
+    CONST_STR( TOK_LOAD         , "LOAD "          );
+    CONST_STR( TOK_GAME_ACCEPT  , "GAME_ACCEPT"    );
+    CONST_STR( TOK_GAME_REJECT  , "GAME_REJECT"    );
+    CONST_STR( TOK_MOVE         , "MOVE "          );
+    CONST_STR( TOK_EXIT         , "EXIT"           );
 
-    CmdParser(QString);
-    cmd_t getNextCmd();
+    NetCmdParser(QString);
+    tok_t getNextCmd();
     QString getRest();
+
+  private:
+    tok_t last_cmd;
+    QString s;
 };
+
+class Game;
 
 class Player {
   private:
-    QObject *parent;
+    Game *par;
     int kicked;
   public:
     typedef enum {
@@ -94,9 +106,9 @@ class Player {
     QString name;
     bool local;
 
-    Player(QObject *);
+    Player(Game *);
     bool incKicked(void);
-    void decKicked(void);
+    bool decKicked(void);
     int getKicked(void);
 };
 
@@ -105,46 +117,6 @@ class Player {
  */
 class Game : public QObject {
   Q_OBJECT
-
-  private:
-    /** the whole game XML tree including history */
-    QDomDocument *doc;
-    QTcpSocket *socket;
-    Player *player_white;
-    Player *player_black;
-    QString filepath;
-    /** queue for errors which can not be output immediately */
-    QList<QString> err_queue;
-    game_state_t game_state;
-    /** needed for game loading from XML, because the connection port
-       is temporary */
-    QString remote_server_port;
-    /** we are loading game from file and the remote side will load our game */
-    bool remote_will_load;
-
-    /** used for checking of possible moves before a user a move is processed */
-    IcpSyntaxParser::pair_int_t last_move_dst;
-    IcpSyntaxParser::pair_int_t possible_jump;
-    QPair<int, int> possible_move_present;
-    /** for replay mode: index of item with the currently applied move */
-    int current_move_index;
-
-    QTimer *replay_timer;
-    int replay_delay;
-    int replay_stop_index;
-
-    /** create a new document template if none is existing yet */
-    void initXml(void);
-    void appendMoveToXml(unsigned int, unsigned int, unsigned int, unsigned int);
-    bool moveFromXml(bool);
-    void syncXml(void);
-    bool loadFromIcpSyntax(QString);
-    void prepareNewSocket(QHostAddress, int);
-    void prepareNewTimer(void);
-    Player *getPlayerFromCoord(unsigned int, unsigned int);
-    bool isBlackBox(unsigned int, unsigned int);
-    bool isInBoundaries(unsigned int, unsigned int);
-    bool isBecomingAKing(unsigned int, unsigned int, bool);
 
   public:
     typedef enum {
@@ -173,6 +145,7 @@ class Game : public QObject {
     typedef enum {
       STATE_PRE_INIT,
       STATE_CAN_START,
+      STATE_RUNNING,
       STATE_WAIT_FOR_CONNECTION,
       STATE_INVITE_DISPATCH,  /**< question */
       STATE_INVITE_RECEIVE,  /**< answer */
@@ -182,35 +155,36 @@ class Game : public QObject {
       STATE_MOVE_RECEIVE,
       STATE_EXIT_DISPATCH,  /**< FIXME redundant??? */
       STATE_EXIT_RECEIVE,
-      STATE_MOVE_WHITE,
-      STATE_MOVE_BLACK,
       STATE_REPLAY_STEP,  /**< accepting user steps */
       STATE_REPLAY_TIMED,
       STATE_REPLAY_STOP,
       STATE_END,  /**< disconnected, exit, error, etc. */
     } state_t;
 
-    const char[] XML_STR_DRAUGHTS      = "draughts";
-    const char[] XML_STR_GAME          = "game";
-    const char[] XML_STR_TYPE          = "type";
-    const char[] XML_STR_LOCAL         = "local";
-    const char[] XML_STR_NETWORK       = "network";
-    const char[] XML_STR_HOST          = "host";
-    const char[] XML_STR_PORT          = "port";
-    const char[] XML_STR_PLAYERS       = "players";
-    const char[] XML_STR_WHITE         = "white";
-    const char[] XML_STR_BLACK         = "black";
-    const char[] XML_STR_MOVES         = "moves";
-    const char[] XML_STR_MOVE          = "move";
-    const char[] XML_STR_SRCX          = "srcx";
-    const char[] XML_STR_SRCY          = "srcy";
-    const char[] XML_STR_DSTX          = "dstx";
-    const char[] XML_STR_DSTY          = "dsty";
-    const char[] XML_STR_KICKEDX       = "kickedx";
-    const char[] XML_STR_KICKEDY       = "kickedy";
-    const char[] XML_STR_BECAME_A_KING = "kicked";
-    const char[] XML_STR_TRUE          = "true";
-    const char[] XML_STR_FALSE         = "false";
+    CONST_STR( XML_STR_DRAUGHTS     , "draughts"      );
+    CONST_STR( XML_STR_GAME         , "game"          );
+    CONST_STR( XML_STR_TYPE         , "type"          );
+    CONST_STR( XML_STR_LOCAL        , "local"         );
+    CONST_STR( XML_STR_NETWORK      , "network"       );
+    CONST_STR( XML_STR_HOST         , "host"          );
+    CONST_STR( XML_STR_PORT         , "port"          );
+    CONST_STR( XML_STR_PLAYERS      , "players"       );
+    CONST_STR( XML_STR_WHITE        , "white"         );
+    CONST_STR( XML_STR_WHITE_KING   , "white_king"    );
+    CONST_STR( XML_STR_BLACK        , "black"         );
+    CONST_STR( XML_STR_BLACK_KING   , "black_king"    );
+    CONST_STR( XML_STR_MOVES        , "moves"         );
+    CONST_STR( XML_STR_MOVE         , "move"          );
+    CONST_STR( XML_STR_SRCX         , "srcx"          );
+    CONST_STR( XML_STR_SRCY         , "srcy"          );
+    CONST_STR( XML_STR_DSTX         , "dstx"          );
+    CONST_STR( XML_STR_DSTY         , "dsty"          );
+    CONST_STR( XML_STR_KICKEDX      , "kickedx"       );
+    CONST_STR( XML_STR_KICKEDY      , "kickedy"       );
+    CONST_STR( XML_STR_KICKED       , "kicked"        );
+    CONST_STR( XML_STR_BECAME_A_KING, "became-a-king" );
+    CONST_STR( XML_STR_TRUE         , "true"          );
+    CONST_STR( XML_STR_FALSE        , "false"         );
 
     const int DEFAULT_TIMEOUT = 300;  /**< miliseconds */
 
@@ -218,12 +192,12 @@ class Game : public QObject {
      * the top left corner is always white
      * convention: board(ROWS, QVector<Player>(COLUMNS))
      */
-    QVector< QVector<men_t> > board(8, QVector<men_t>(8, MEN_NONE));
+    QVector< QVector<men_t> > board;
 
     Game(void);
     ~Game(void);
     /** @return true if OK */
-    bool gameRemote(QHostAddress, int, bool);  /**< locally initiated */
+    bool gameRemote(QHostAddress, int, Player::color_t);  /**< locally initiated */
     /** @return true if OK */
     bool gameRemote(QTcpSocket *);  /**< remotely initiated */
     /** @return true if OK */
@@ -239,10 +213,10 @@ class Game : public QObject {
     bool isLocal(void);
     state_t getState(void);//FIXME not needed?
 
-    int move(unsigned int, unsigned int, unsigned int, unsigned int, bool);
-    void showPossibleMoves(unsigned int, unsigned int, bool);
-    void hidePossibleMoves(bool);
-    void hidePossibleMoves(int, int, bool);
+    err_t move(unsigned int, unsigned int, unsigned int, unsigned int, bool loading = false);
+    bool showPossibleMoves(unsigned int, unsigned int, bool do_emit = true);
+    void hidePossibleMoves(bool do_emit = true);
+    void hidePossibleMoves(int, int, bool do_emit = true);
     void adviceMove(void);
 
     void setReplayTimeout(int);
@@ -257,11 +231,51 @@ class Game : public QObject {
 
     //FIXME update variables inside (player names etc.)
     QString getXmlStr(void);
-    QString getIcpSyntaxStr(bool);
+    QString getIcpSyntaxStr(bool to_current_move_index = false);
     QString getError(void);
     QHostAddress getRemoteAddr(void);
     int getRemotePort(void);
     QString getFilePath(void);
+
+  private:
+    /** the whole game XML tree including history */
+    QDomDocument *doc;
+    QTcpSocket *socket;
+    Player *player_white;
+    Player *player_black;
+    QString filepath;
+    /** queue for errors which can not be output immediately */
+    QList<QString> err_queue;
+    state_t game_state;
+    /** needed for game loading from XML, because the connection port
+       is temporary */
+    QString remote_server_port;
+    /** we are loading game from file and the remote side will load our game */
+    bool remote_will_load;
+
+    /** used for checking of possible moves before a user a move is processed */
+    QPair<int, int> last_move_dst;
+    IcpSyntaxParser::pair_uint_t possible_jump;
+    QPair<int, int> possible_move_present;
+    /** for replay mode: index of item with the currently applied move */
+    int current_move_index;
+
+    QTimerImproved *replay_timer;
+    int replay_delay;
+    int replay_stop_index;
+
+    /** create a new document template if none is existing yet */
+    void initXml(void);
+    void appendMoveToXml(unsigned int, unsigned int, unsigned int, unsigned int, int, int, bool);
+    bool moveFromXml(bool forward = true);
+    void syncXml(void);
+    bool loadFromIcpSyntax(QString);
+    void prepareNewSocket(QHostAddress, int);
+    void prepareNewTimer(void);
+    Player *getPlayerFromCoord(unsigned int, unsigned int);
+    bool isBlackBox(unsigned int, unsigned int);
+    bool isInBoundaries(int, int);
+    bool isBecomingAKing(men_t, unsigned int);
 
   public Q_SLOTS:
     //QMessageBox::critical(this, tr("Network error"), socket->errorString());
