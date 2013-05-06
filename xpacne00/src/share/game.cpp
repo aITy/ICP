@@ -197,14 +197,14 @@ int Player::getKicked(void) {
 //TODO OK
 void Game::initXml(void) {
   /** it is yet initialized */
-  if (doc->firstChild().isNull()) return;
+  if (! doc->firstChild().isNull()) return;
 
   /** special XML characters are escaped automatically */
   if (! doc->setContent(
       QString("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
       "<!-- standalone because we have no DTD for it -->"
       "<draughts version=\"1.0\">"
-      "<game type=\"network/local\" host=\"hostname/IPv4/IPv6\" port=\"7564\">"
+      "<game type=\"network/local\" host=\"hostname/IPv4/IPv6\" port=\"7564\"/>"
       "<players>"
       "<black>") + QString(player_black->name) + QString("</black>"
       "<white>") + QString(player_white->name) + QString("</white>"
@@ -212,7 +212,7 @@ void Game::initXml(void) {
       "<moves>"
       "</moves>"
       "</draughts>")))
-    qDebug() << "setContent() failed";
+    qDebug("setContent() failed");
 
   /*
   QDomProcessingInstruction header = doc->createProcessingInstruction();
@@ -662,7 +662,7 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
     }
   }
   /** try to parse the file as XML */
-  else if (doc->setContent(&f)) {
+  else if (! doc->setContent(&f)) {
     /** local game */
     if (doc->documentElement().firstChildElement(XML::STR_DRAUGHTS).
         firstChildElement(XML::STR_GAME).
@@ -1175,7 +1175,7 @@ void Game::syncXml(void) {
   Q_ASSERT(doc != NULL);
 
   //FIXME test if the prefix documentElement() returns directly "draughts"
-  QDomElement e(doc->documentElement().firstChildElement(XML::STR_DRAUGHTS));
+  QDomElement e = doc->documentElement().firstChildElement(XML::STR_DRAUGHTS);
 
   /** /draughts/game[@type] */
   e.firstChildElement(XML::STR_GAME).setAttribute(XML::STR_TYPE,
@@ -1303,7 +1303,7 @@ void Game::gotConnected(void) {
 }
 
 void Game::gotNewData(void) {
-  qDebug() << "UNIMPLEMENTED: gotNewData()" << endl;
+  qDebug("UNIMPLEMENTED: gotNewData()");//FIXME
   //// get the socket from the sender object
   //QTcpSocket* soc = qobject_cast<QTcpSocket*>(this->sender());
   //QString s(socket->readAll());
@@ -1325,7 +1325,7 @@ void Game::gotNewData(void) {
 }
 
 void Game::gotDisconnected(void) {
-  qDebug() << "UNIMPLEMENTED: gotDisconnected()" << endl;
+  qDebug("UNIMPLEMENTED: gotDisconnected()");//FIXME
   //QTcpSocket* socket = qobject_cast<QTcpSocket*>( this->sender() );
   //if (this->sender()->parent != this)
 
@@ -1335,7 +1335,7 @@ void Game::gotDisconnected(void) {
 }
 
 void Game::gotTimeout(void) {
-  qDebug() << "UNIMPLEMENTED: gotTimeout()" << endl;
+  qDebug("UNIMPLEMENTED: gotTimeout()");//FIXME
   //FIXME move forward by 1; refresh
   Q_EMIT refresh();
 }
