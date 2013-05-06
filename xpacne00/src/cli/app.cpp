@@ -140,7 +140,7 @@ void App::refresh(void) {
     qtout << endl;
   }
   else {
-    qtout << "The game is not running->.." << endl;
+    qtout << "The game is not running..." << endl;
     QString tmp = g->getError();
     if (! tmp.isEmpty())
       qterr << tmp << endl;
@@ -206,7 +206,7 @@ void App::refresh(void) {
   }
   else if (cmd_l.at(0) == "q!") {
     qtout << endl;
-    QTimer::singleShot(0, this, SLOT(finished(void)));
+    Q_EMIT finished();
   }
   else if (cmd_l.at(0) == "aw") {
     cmd_l.removeFirst();
@@ -263,20 +263,36 @@ void App::refresh(void) {
     }
 
     if (cmd_l.size() == 2 || cmd_l.size() == 3) {
+
+      qDebug("howk00");//FIXME
       if (! g->gameFromFile(cmd_l.at(1), cl))
+<<<<<<< HEAD
         qterr << "ERR: " << g->getError() << endl;
+=======
+        qterr << g->getError() << endl;
+>>>>>>> honza_local
     }
   }
   else if (cmd_l.at(0) == "r") {
+      qDebug("howk01");//FIXME
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1), false))
+<<<<<<< HEAD
         qterr << "ERR: " << g->getError() << endl;
+=======
+        qterr << g->getError() << endl;
+>>>>>>> honza_local
     }
   }
   else if (cmd_l.at(0) == "rt") {
+      qDebug("howk02");//FIXME
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1), true))
+<<<<<<< HEAD
         qterr << "ERR: " << g->getError() << endl;
+=======
+        qterr << g->getError() << endl;
+>>>>>>> honza_local
     }
   }
   else if (cmd_l.at(0) == "s") {
@@ -327,7 +343,6 @@ void App::refresh(void) {
   }
   else if (cmd_l.at(0) == "hm") {
     g->adviceMove();
-    schedule_refresh();
   }
   else if (cmd_l.at(0) == "bw") {
     int steps = 1;
@@ -406,8 +421,7 @@ void App::handleInput(void) {
 /** usually this slot must prepare a solely new game, but in CLI, this game
     already exists because we can have only one game at a time */
 void App::gotConnection() {
-  //FIXME remove this debug
-  qDebug() << "gotConnection()" << endl;
+  qDebug("gotConnection()"); //FIXME remove this debug
 
   /** user did not handled the previous connection */
   if (! new_conn_handled) return;
