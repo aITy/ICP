@@ -220,7 +220,6 @@ void App::refresh(void) {
   }
   else if (cmd_l.at(0) == "n") {
     g->gameLocal();
-    schedule_refresh();
   }
   else if (cmd_l.at(0) == "nn") {
     if (cmd_l.size() == 4) {
@@ -266,21 +265,18 @@ void App::refresh(void) {
     if (cmd_l.size() == 2 || cmd_l.size() == 3) {
       if (! g->gameFromFile(cmd_l.at(1), cl))
         qterr << "ERR: " << g->getError() << endl;
-      schedule_refresh();
     }
   }
   else if (cmd_l.at(0) == "r") {
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1), false))
         qterr << "ERR: " << g->getError() << endl;
-      schedule_refresh();
     }
   }
   else if (cmd_l.at(0) == "rt") {
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1), true))
         qterr << "ERR: " << g->getError() << endl;
-      schedule_refresh();
     }
   }
   else if (cmd_l.at(0) == "s") {

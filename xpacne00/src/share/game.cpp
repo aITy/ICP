@@ -818,6 +818,13 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 
   hidePossibleMoves(false);
 
+  /** force to alternate moves */
+  if ((white_is_playing && game_state == STATE_WHITE) ||
+      (black_is_playing && game_state == STATE_BLACK)) {
+    err_queue.append("ERR: Players must alternate.");
+    return ERR_INVALID_MOVE;
+  }
+
   /** check presence in dst */
   if (board[dsty][dstx] != MEN_NONE) {
     err_queue.append("ERR: Destination not empty!");
@@ -897,7 +904,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
   if (! isInBoundaries(x, y) || ! isBlackBox(x, y)) return false;
 
-  hidePossibleMoves(do_emit);
+  hidePossibleMoves(false);
 
   /** check presence */
   if (board[y][x] == MEN_NONE)
@@ -1037,7 +1044,7 @@ void Game::adviceMove(void) {
 
   /** look at this genius AI */
   if (game_state == STATE_CAN_START) {
-    board[0][1] = MEN_POSSIBLE_MOVE;
+    board[3][2] = MEN_POSSIBLE_MOVE;
     return;
   }
 
