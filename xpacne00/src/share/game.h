@@ -234,6 +234,7 @@ class Game : public QObject {
     bool replayMoveStop(void);
     /** used e.g. for user input locking */
     bool isReplaying(void);
+    bool isBlackBox(unsigned int, unsigned int);
 
     Player *getPlayerWhite(void);
     Player *getPlayerBlack(void);
@@ -282,7 +283,6 @@ class Game : public QObject {
     void prepareNewSocket(QHostAddress, int);
     void prepareNewTimer(void);
     Player *getPlayerFromCoord(unsigned int, unsigned int);
-    bool isBlackBox(unsigned int, unsigned int);
     bool isInBoundaries(int, int);
     bool isBecomingAKing(men_t, unsigned int);
 

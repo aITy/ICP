@@ -553,6 +553,18 @@ Game::Game(void) :
   player_black->name = "Player Black";
   doc = new QDomDocument("ICP_draughts_game_XML_document");
   remote_will_load = false;
+
+  /** init board with the default MEN distribution */
+  for (int i = 0; i < board.size(); ++i) {
+    for (int j = 0; j < board[i].size(); ++j) {
+      if (isBlackBox(j, i)) {
+        if (i < (board.size() / 2 -1))
+          board[i][j] = MEN_WHITE;
+        else if (i >= (board.size() - (board.size() / 2 -1)))
+          board[i][j] = MEN_BLACK;
+      }
+    }
+  }
 }
 
 //TODO OK
@@ -765,7 +777,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 
   /** check placement (can be only black square) */
   if (! isBlackBox(srcx, srcy) || ! isBlackBox(dstx, dsty)) {
-    err_queue.append("ERR: Given coordinates are on black boxes.");
+    err_queue.append("ERR: Given coordinates are not on black boxes.");
     return ERR_INVALID_MOVE;
   }
 
@@ -790,7 +802,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     }
   }
 
-  if ((loading || game_state == STATE_CAN_START) && board[srcy][srcx] == MEN_WHITE) {
+  if ((loading || game_state == STATE_CAN_START) && board[srcy][srcx] != MEN_WHITE) {
     err_queue.append("ERR: White men must start the game.");
     return ERR_WHITE_MUST_START;
   }
@@ -807,7 +819,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
   hidePossibleMoves(false);
 
   /** check presence in dst */
-  if (board[dsty][dstx] == MEN_NONE) {
+  if (board[dsty][dstx] != MEN_NONE) {
     err_queue.append("ERR: Destination not empty!");
     return ERR_INVALID_MOVE;
   }

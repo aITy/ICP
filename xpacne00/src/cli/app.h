@@ -37,10 +37,10 @@
 #define TERM_BG_BLACK      _TERM_C_START _TERM_C_RESET ";4" _TERM_C_BLACK _TERM_C_END
 #define TERM_BG_WHITE      _TERM_C_START _TERM_C_RESET ";4" _TERM_C_WHITE _TERM_C_END
 #define TERM_BG_TIP        _TERM_C_START _TERM_C_RESET ";4" _TERM_C_GREEN _TERM_C_END
-#define TERM_FG_MEN_BLACK  _TERM_C_START _TERM_C_DIM ";3" _TERM_C_BLUE   _TERM_C_END "o"
-#define TERM_FG_MEN_WHITE  _TERM_C_START _TERM_C_DIM ";3" _TERM_C_RED _TERM_C_END "o"
-#define TERM_FG_KING_BLACK _TERM_C_START _TERM_C_DIM ";3" _TERM_C_BLUE   _TERM_C_END "?"
-#define TERM_FG_KING_WHITE _TERM_C_START _TERM_C_DIM ";3" _TERM_C_RED _TERM_C_END "?"
+#define TERM_FG_MEN_BLACK  _TERM_C_START _TERM_C_DIM   ";3" _TERM_C_BLUE  _TERM_C_END
+#define TERM_FG_MEN_WHITE  _TERM_C_START _TERM_C_DIM   ";3" _TERM_C_RED   _TERM_C_END
+#define TERM_FG_KING_BLACK _TERM_C_START _TERM_C_DIM   ";3" _TERM_C_BLUE  _TERM_C_END
+#define TERM_FG_KING_WHITE _TERM_C_START _TERM_C_DIM   ";3" _TERM_C_RED   _TERM_C_END
 
 /**
  * main task which comprises the whole console program
@@ -65,9 +65,9 @@ private:
 public:
   App(QCoreApplication *);
   ~App();
-  void refresh(void);
 
 public Q_SLOTS:
+  void refresh(void);
   void handleInput(void);
   void gotConnection(void);
   void schedule_refresh(void);

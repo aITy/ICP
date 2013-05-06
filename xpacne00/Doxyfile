@@ -1,0 +1,17 @@
+/**
+ * Authors: Jiri Navratil (xnavra36)
+ *          Jan Pacner (xpacne00)
+ */
+
+PROJECT_NAME = "ICP projekt 2013 (xnavra36, xpacne00)"
+INPUT = src/cli src/share src/test_qt
+
+
+GENERATE_HTML = YES
+GENERATE_LATEX = NO
+
+# include source code into output
+SOURCE_BROWSER = YES
+
+# directory name for html output
+HTML_OUTPUT = doc/

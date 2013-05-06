@@ -30,6 +30,7 @@ App::App(QCoreApplication *_parent) :
   //  qtout << (*i).toLocal8Bit().constData() << endl;
   //}
 
+  /** simulate that we are waiting for new connection */
   new_conn_handled = true;
   server = new QTcpServer(this);
   /** we will react on new connections in a user-loop */
@@ -91,20 +92,25 @@ void App::refresh(void) {
 
   if (g->isRunning()) {
     bool first_run = true;
-    /** the top left corner is white */
-    bool dim = false;
 
     for (int i = 0; i < g->board.size(); ++i) {
+      if (first_run) {
+        qtout << "  ";
+        /** first line is header with a-h */
+        for(int j = 0; j < g->board[i].size(); ++j)
+          qtout << IcpSyntaxParser::intToStrCoord(j, 0).first;
+        qtout << endl;
+        first_run = false;
+      }
+
       /** first column (except of the first header line) starts with index 1-8 */
-      if (! first_run)
-        qtout << IcpSyntaxParser::intToStrCoord(0, i).second << " ";
+      qtout << IcpSyntaxParser::intToStrCoord(0, i).second << " ";
 
       for(int j = 0; j < g->board[i].size(); ++j) {
-        /** first line is header with a-h */
-        if (first_run)
-          qtout << IcpSyntaxParser::intToStrCoord(j, 0).first << endl << endl;
-
-        qtout << ((dim) ? TERM_BG_BLACK : TERM_BG_WHITE);
+        if (g->isBlackBox(j, i))
+          qtout << TERM_BG_BLACK;
+        else
+          qtout << TERM_BG_WHITE;
 
         switch (g->board[i][j]) {
           case Game::MEN_NONE:
@@ -126,11 +132,11 @@ void App::refresh(void) {
             qtout << TERM_FG_KING_BLACK << "?" << TERM_C_RESET;
             break;
         }
-
-        dim = ! dim;
       }
-      qtout << endl;
+
+      qtout << TERM_BG_BLACK << endl;
     }
+
     qtout << endl;
   }
   else {
@@ -142,8 +148,8 @@ void App::refresh(void) {
   }
 
   /** in CLI we can handle only 1 game at a time */
-  if (! g->isRunning() && new_conn_handled) {
-    new_conn_handled = false;
+  if (! g->isRunning() && ! new_conn_handled) {
+    new_conn_handled = true;
 
     for (;;) {
       qtout << "Connection request from " <<
@@ -164,10 +170,13 @@ void App::refresh(void) {
     }
   }
 
-  qtout << "for help type h" << endl << ">>> ";
+  qtout << "for help type h" << endl << ">>> " << flush;
 
-  if (cmd_l.at(0) == "h") {
-    qtout <<
+  if (cmd_l.isEmpty()) {
+    /** <CR> => refresh */
+  }
+  else if (cmd_l.at(0) == "h") {
+    qtout << endl <<
       "BASIC COMMANDS" << endl <<
       "  h                     this help" << endl <<
       "  q                     quit game only" << endl <<
@@ -196,14 +205,17 @@ void App::refresh(void) {
     schedule_refresh();
   }
   else if (cmd_l.at(0) == "q!") {
+    qtout << endl;
     QTimer::singleShot(0, this, SLOT(finished(void)));
   }
   else if (cmd_l.at(0) == "aw") {
-    g->getPlayerWhite()->name = cmd_l.at(1);
+    cmd_l.removeFirst();
+    g->getPlayerWhite()->name = cmd_l.join(" ");
     schedule_refresh();
   }
   else if (cmd_l.at(0) == "ab") {
-    g->getPlayerBlack()->name = cmd_l.at(1);
+    cmd_l.removeFirst();
+    g->getPlayerBlack()->name = cmd_l.join(" ");
     schedule_refresh();
   }
   else if (cmd_l.at(0) == "n") {
@@ -372,12 +384,12 @@ void App::refresh(void) {
   else if (cmd_l.at(0) == "st") {
     g->replayMoveStop();
   }
-  /** <CR> => refresh */
-  else if (! cmd_l.at(0).isEmpty()) {
+  else {
     qterr << "ERR: Unknown command(s) given. Use `h' for help." << endl;
   }
 
-  //cmd_l.clear(); //FIXME needed?
+  /** make sure the current commands will not be processed more than once */
+  cmd_l.clear();
 }
 
 void App::schedule_refresh(void) {
@@ -401,7 +413,7 @@ void App::gotConnection() {
   //FIXME remove this debug
   qDebug() << "gotConnection()" << endl;
 
-  /** allow only one connection at a time */
+  /** user did not handled the previous connection */
   if (! new_conn_handled) return;
 
   if (server->hasPendingConnections())
