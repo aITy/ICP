@@ -273,35 +273,42 @@ void Game::appendMoveToXml(unsigned int srcx, unsigned int srcy,
 bool Game::moveFromXml(bool forward) {
   /** we can't go more backwards than before the first move */
   if (! forward && current_move_index < 0) {
+    /** switch back to the absolute beginning of the game */
     if (! isReplaying()) game_state = STATE_CAN_START;
 
     return false;
   }
 
-  QDomNode mv(doc->documentElement().firstChildElement(XML::STR_DRAUGHTS)
-  .firstChildElement(XML::STR_MOVES).firstChildElement(XML::STR_MOVE));
+  QDomNode mv(doc->documentElement().firstChildElement(XML::STR_MOVES).
+      firstChildElement(XML::STR_MOVE));
 
   if (mv.isNull()) {
     if (! isReplaying()) game_state = STATE_CAN_START;
 
     return false;
   }
+
+  qDebug("calling........................");//FIXME
 
   int i;
   /** get to the current index */
   for (i = 0; i < current_move_index; ++i) {
-    if (mv.nextSibling().isNull())
+    if (mv.nextSibling().isNull()) {
       break;
-    else
+    }
+    else {
       mv = mv.nextSibling();
+    }
   }
 
-  /** the last performed move is the current one */
-  if (forward) mv = mv.nextSibling();
+  /** the last performed move is the current one (but
+      do not include the first move) */
+  if (forward && current_move_index > 0) {
+    mv = mv.nextSibling();
+  }
 
   if (mv.isNull()) {
-    if (! isReplaying()) game_state = STATE_END;
-
+    //if (! isReplaying()) game_state = STATE_END;
     return false;
   }
 
@@ -332,6 +339,7 @@ bool Game::moveFromXml(bool forward) {
   bool became_a_king = (map.namedItem(XML::STR_BECAME_A_KING).nodeValue() == XML::STR_TRUE) ? true : false;
 
   if (kicked_men != MEN_NONE) {
+    qDebug("howk00");//FIXME
     if (forward) {
       if (! getPlayerFromCoord(kickedx, kickedy)->incKicked())
         if (! isReplaying())
@@ -348,6 +356,11 @@ bool Game::moveFromXml(bool forward) {
     }
   }
 
+  qDebug("srcx " + QString::number(srcx).toLocal8Bit());//FIXME
+  qDebug("srcy " + QString::number(srcy).toLocal8Bit());//FIXME
+  qDebug("dstx " + QString::number(dstx).toLocal8Bit());//FIXME
+  qDebug("dsty " + QString::number(dsty).toLocal8Bit());//FIXME
+
   if (forward) {
     if (! isReplaying()) {
       if (board[srcy][srcx] == MEN_WHITE ||
@@ -358,6 +371,7 @@ bool Game::moveFromXml(bool forward) {
     }
 
     if (became_a_king) {
+    qDebug("howk02");//FIXME
       men_t tmp;
 
       if (board[srcy][srcx] == MEN_WHITE)
@@ -372,6 +386,7 @@ bool Game::moveFromXml(bool forward) {
       last_move_dst.second = -1;
     }
     else {
+    qDebug("howk03");//FIXME
       board[dsty][dstx] = board[srcy][srcx];
       last_move_dst.first  = dstx;
       last_move_dst.second = dsty;
@@ -380,7 +395,9 @@ bool Game::moveFromXml(bool forward) {
     board[srcy][srcx] = MEN_NONE;
   }
   else {
+    qDebug("howk04");//FIXME
     if (! isReplaying()) {
+    qDebug("howk05");//FIXME
       if (board[dsty][dstx] == MEN_WHITE ||
           board[dsty][dstx] == MEN_WHITE_KING)
         game_state = STATE_WHITE;
@@ -389,6 +406,7 @@ bool Game::moveFromXml(bool forward) {
     }
 
     if (became_a_king) {
+    qDebug("howk06");//FIXME
       men_t tmp;
 
       if (board[dsty][dstx] == MEN_WHITE_KING)
@@ -399,6 +417,7 @@ bool Game::moveFromXml(bool forward) {
       board[srcy][srcx] = tmp;
     }
     else {
+    qDebug("howk07");//FIXME
       board[srcy][srcx] = board[dsty][dstx];
     }
 
@@ -544,6 +563,7 @@ Game::Game(void) :
   last_move_dst(-1, -1),
   possible_move_present(-1, -1),
   current_move_index(-1),
+  game_ai(Player::COLOR_DONT_KNOW),
   replay_timer(NULL),
   replay_delay(DEFAULT_TIMEOUT)
 {
@@ -583,7 +603,10 @@ Game::~Game(void) {
 }
 
 //TODO OK
-/** we are founding a completely new game */
+/**
+ * we are founding a completely new game
+ * @return true if OK
+ */
 bool Game::gameRemote(QHostAddress addr, int port, Player::color_t color) {
   if (! remote_will_load && isRunning()) return false;
 
@@ -610,7 +633,10 @@ bool Game::gameRemote(QHostAddress addr, int port, Player::color_t color) {
   return true;
 }
 
-/** we are connecting to a "running" game */
+/**
+ * we are connecting to a "running" game
+ * @return true if OK
+ */
 //TODO OK
 bool Game::gameRemote(QTcpSocket *socket) {
   if (isRunning()) return false;
@@ -626,6 +652,7 @@ bool Game::gameRemote(QTcpSocket *socket) {
 }
 
 //TODO OK
+/** @return true if OK */
 bool Game::gameLocal(void) {
   if (isRunning()) return false;
 
@@ -636,7 +663,35 @@ bool Game::gameLocal(void) {
   return true;
 }
 
-/** new game from file => jump to end (interpret moves between, of course) */
+/**
+ * play against AI
+ * @param if true, the computer AI will black; otherwise AI will be white
+ * @return true if OK
+ */
+bool Game::gameLocal(bool ai_is_black) {
+  if (isRunning()) return false;
+
+  initXml();
+  game_state = STATE_CAN_START;
+
+  if (ai_is_black) {
+    game_ai = Player::COLOR_BLACK;
+  }
+  else {
+    game_ai = Player::COLOR_WHITE;
+    /** last complete (finished) move had the black player */
+    game_state = STATE_BLACK;
+    move(0, 0, 0, 0, false);
+  }
+
+  Q_EMIT refresh();
+  return true;
+}
+
+/**
+ * new game from file => jump to end (interpret moves between, of course)
+ * @return true if OK
+ */
 //TODO OK
 bool Game::gameFromFile(QString s, Player::color_t color) {
   if (isRunning()) return false;
@@ -648,6 +703,7 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
   if (! f.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
 
   QTextStream stream(&f);
+  QString err; int line, column;
 
   /** try to parse the file as ICP syntax (first character must be '1') */
   if (! stream.atEnd() && stream.read(1) == "1") {
@@ -662,18 +718,38 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
     }
   }
   /** try to parse the file as XML */
-  else if (! doc->setContent(&f)) {
+  else if (f.seek(0) && doc->setContent(&f, false, &err, &line, &column)) {
     /** local game */
-    if (doc->documentElement().firstChildElement(XML::STR_DRAUGHTS).
-        firstChildElement(XML::STR_GAME).
+    if (doc->documentElement().firstChildElement(XML::STR_GAME).
         attributeNode(XML::STR_TYPE).value() == XML::STR_LOCAL) {
       game_state = STATE_CAN_START;
 
       /** interpret all available moves */
       while (moveFromXml(true));
+      //FIXME
+      #define PRINT_STATE(st) if (game_state == (st)) qDebug(#st);
+      PRINT_STATE(STATE_PRE_INIT            );
+      PRINT_STATE(STATE_CAN_START           );
+      PRINT_STATE(STATE_RUNNING             );
+      PRINT_STATE(STATE_WHITE               );
+      PRINT_STATE(STATE_BLACK               );
+      PRINT_STATE(STATE_WAIT_FOR_CONNECTION );
+      PRINT_STATE(STATE_INVITE_DISPATCH     );
+      PRINT_STATE(STATE_INVITE_RECEIVE      );
+      PRINT_STATE(STATE_GAME_DISPATCH       );
+      PRINT_STATE(STATE_GAME_RECEIVE        );
+      PRINT_STATE(STATE_MOVE_DISPATCH       );
+      PRINT_STATE(STATE_MOVE_RECEIVE        );
+      PRINT_STATE(STATE_EXIT_DISPATCH       );
+      PRINT_STATE(STATE_EXIT_RECEIVE        );
+      PRINT_STATE(STATE_REPLAY_STEP         );
+      PRINT_STATE(STATE_REPLAY_TIMED        );
+      PRINT_STATE(STATE_REPLAY_STOP         );
+      PRINT_STATE(STATE_END                 );
     }
     /** network game */
-    else {
+    else if (doc->documentElement().firstChildElement(XML::STR_GAME).
+        attributeNode(XML::STR_TYPE).value() == XML::STR_NETWORK) {
       /** the remote side will have to load my config */
       remote_will_load = true; //FIXME zohlednit v gotNewData()
       game_state = STATE_CAN_START;
@@ -683,20 +759,27 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
 
       if (! gameRemote(
             QHostAddress(doc->documentElement().
-              firstChildElement(XML::STR_DRAUGHTS).
               firstChildElement(XML::STR_GAME).
               attributeNode(XML::STR_HOST).value()),
             QString(doc->documentElement().
-              firstChildElement(XML::STR_DRAUGHTS).
               firstChildElement(XML::STR_GAME).
               attributeNode(XML::STR_HOST).value()).toInt(), color)) {
         remote_will_load = false;
+        game_state = STATE_PRE_INIT;
         doc->clear();  /**< tidy up garbage from setContent() */
+        qDebug("WTF00");//FIXME
         return false;
       }
     }
+    else {
+      err_queue.append("ERR: Bad XML format (can't decide whether it is local/network game)!");
+      return false;
+    }
   }
   else {
+    qDebug("ABC00: " + err.toLocal8Bit() + "; line " +
+        QString::number(line).toLocal8Bit() + "; column " +
+        QString::number(column).toLocal8Bit());//FIXME
     err_queue.append("ERR: Bad file format (only XML or ICP syntax supported)!");
     return false;
   }
@@ -705,7 +788,9 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
   return true;
 }
 
-/** replay loaded game */
+/** replay loaded game
+ * @return true if OK
+ */
 //TODO OK
 bool Game::gameFromFile(QString s, bool timed) {
   if (isRunning()) return false;
@@ -817,6 +902,20 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
   }
 
   hidePossibleMoves(false);
+
+  //FIXME
+  if (game_state == STATE_WHITE && game_ai == Player::COLOR_BLACK) {
+    adviceMove();
+    if (can make another move)
+      call move();
+    else
+      game_state = state_white
+
+    Q_EMIT refresh();
+    return ERR_OK;
+  }
+  else if (game_state == STATE_BLACK && game_ai == Player::COLOR_BLACK) {
+  }
 
   /** check presence in dst */
   if (board[dsty][dstx] != MEN_NONE) {
@@ -1174,24 +1273,22 @@ Player *Game::getPlayerBlack(void) {
 void Game::syncXml(void) {
   Q_ASSERT(doc != NULL);
 
-  //FIXME test if the prefix documentElement() returns directly "draughts"
-  QDomElement e = doc->documentElement().firstChildElement(XML::STR_DRAUGHTS);
-
+  QDomElement e = doc->documentElement().firstChildElement(XML::STR_GAME);
   /** /draughts/game[@type] */
-  e.firstChildElement(XML::STR_GAME).setAttribute(XML::STR_TYPE,
+  e.setAttribute(XML::STR_TYPE,
       (socket == NULL) ? XML::STR_LOCAL : XML::STR_NETWORK);
   /** /draughts/game[@host] */
-  e.firstChildElement(XML::STR_GAME).setAttribute(XML::STR_HOST,
+  e.setAttribute(XML::STR_HOST,
       (socket == NULL) ? "" : socket->peerAddress().toString());
   /** /draughts/game[@port] */
-  e.firstChildElement(XML::STR_GAME).setAttribute(XML::STR_PORT,
+  e.setAttribute(XML::STR_PORT,
       (socket == NULL) ? "" : remote_server_port);
+
+  e = doc->documentElement().firstChildElement(XML::STR_PLAYERS);
   /** /draughts/players/black */
-  e.firstChildElement(XML::STR_PLAYERS).firstChildElement(XML::STR_WHITE).
-    toText().setData(player_white->name);
+  e.firstChildElement(XML::STR_WHITE).toText().setData(player_white->name);
   /** /draughts/players/white */
-  e.firstChildElement(XML::STR_PLAYERS).firstChildElement(XML::STR_BLACK).
-    toText().setData(player_black->name);
+  e.firstChildElement(XML::STR_BLACK).toText().setData(player_black->name);
 }
 
 //TODO OK
@@ -1215,8 +1312,8 @@ QString Game::getIcpSyntaxStr(bool to_current_move_index) {
 //
 //  Q_ASSERT(doc != NULL);
 //  syncXml();
-//  QDomElement mv(doc->documentElement().firstChildElement(XML::STR_DRAUGHTS)
-//  .firstChildElement(XML::STR_MOVES).firstChildElement(XML::STR_MOVE));
+//  QDomElement mv(doc->documentElement().
+//  firstChildElement(XML::STR_MOVES).firstChildElement(XML::STR_MOVE));
 //
 //  if (mv.isNull()) return res;
 //

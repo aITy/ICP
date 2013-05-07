@@ -205,17 +205,13 @@ class Game : public QObject {
 
     Game(void);
     ~Game(void);
-    /** @return true if OK */
     bool gameRemote(QHostAddress, int, Player::color_t);  /**< locally initiated */
-    /** @return true if OK */
     bool gameRemote(QTcpSocket *);  /**< remotely initiated */
-    /** @return true if OK */
     bool gameLocal(void);
-    /** @return true if OK */
+    bool gameLocal(bool);
     bool gameFromFile(QString, Player::color_t);
     //FIXME some flag, that the game can not be user-modified while replaying
     //  tohle prepne do stavu PAUSE
-    /** @return true if OK */
     bool gameFromFile(QString, bool);  /**< game replay */
     //FIXME adjust to state_t!!!
     bool isRunning(void);  /**< is the game running in either mode? (e.g. replaying loaded game; playing network game etc.) */
@@ -269,6 +265,7 @@ class Game : public QObject {
     QPair<int, int> possible_move_present;
     /** for replay mode: index of item with the currently applied move */
     int current_move_index;
+    Player::color_t game_ai;
 
     QTimerImproved *replay_timer;
     int replay_delay;
