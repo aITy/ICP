@@ -209,7 +209,7 @@ void Game::initXml(void) {
 
   /** special XML characters are escaped automatically */
   if (! doc->setContent(
-      QString("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+      QString("<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"
       "<!-- standalone because we have no DTD for it -->"
       "<draughts version=\"1.0\">"
       "<game type=\"network/local\" host=\"hostname/IPv4/IPv6\" port=\"7564\"/>"
@@ -221,14 +221,6 @@ void Game::initXml(void) {
       "</moves>"
       "</draughts>")))
     qDebug("setContent() failed");
-
-  /*
-  QDomProcessingInstruction header = doc->createProcessingInstruction();
-  QDomComment comment = doc->createComment();
-  QDomElement draughts = doc->createElement();
-  QDomAttr attr = doc->createAttribute();
-  QDomText text_content = doc->createTextNode(p.name);
-  */
 }
 
 // http://www.qtforum.org/article/27624/how-to-read-a-xml-file.html
@@ -237,7 +229,7 @@ void Game::initXml(void) {
 //TODO OK
 void Game::appendMoveToXml(unsigned int srcx, unsigned int srcy,
     unsigned int dstx, unsigned int dsty,
-    int kickedx, int kickedy, bool became_a_king) {
+    int kickedx, int kickedy, men_t kicked, bool became_a_king) {
   QDomElement el_move = doc->createElement(XML::STR_MOVE);
 
   QDomAttr attr = doc->createAttribute(XML::STR_SRCX);
@@ -264,12 +256,32 @@ void Game::appendMoveToXml(unsigned int srcx, unsigned int srcy,
   attr.setValue(QString::number(kickedy));
   el_move.setAttributeNode(attr);
 
+  attr = doc->createAttribute(XML::STR_KICKED);
+  switch (kicked) {
+    case MEN_WHITE:
+      attr.setValue(XML::STR_WHITE);
+      break;
+    case MEN_WHITE_KING:
+      attr.setValue(XML::STR_WHITE_KING);
+      break;
+    case MEN_BLACK:
+      attr.setValue(XML::STR_BLACK);
+      break;
+    case MEN_BLACK_KING:
+      attr.setValue(XML::STR_BLACK_KING);
+      break;
+    // MEN_POSSIBLE_MOVE, MEN_NONE
+    default:
+      attr.setValue(XML::STR_NONE);
+      break;
+  }
+  el_move.setAttributeNode(attr);
+
   attr = doc->createAttribute(XML::STR_BECAME_A_KING);
   attr.setValue(became_a_king ? XML::STR_TRUE : XML::STR_FALSE);
   el_move.setAttributeNode(attr);
 
   doc->elementsByTagName(XML::STR_MOVES).at(0).appendChild(el_move);
-  //doc->elementsByTagName(XML::STR_MOVES).at(0).toElement().appendChild(el_move);
 }
 
 /**
@@ -673,7 +685,8 @@ bool Game::gameLocal(void) {
 
 /**
  * play against AI
- * @param if true, the computer AI will black; otherwise AI will be white
+ * @param if true, the computer AI will be the black player
+ *        otherwise AI will be white
  * @return true if OK
  */
 bool Game::gameLocal(bool ai_is_black) {
@@ -901,7 +914,12 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 
   /** return if the previous move wasn't complete */
   if (! loading && last_move_dst.first != -1 &&
-      (int(srcx) != last_move_dst.first || int(srcy) != last_move_dst.second) &&
+      /** make sure, the last move has kicked some men/king out */
+      doc->documentElement().firstChildElement(XML::STR_MOVES).
+        lastChild().attributes().namedItem(XML::STR_KICKED).
+        nodeValue() != XML::STR_NONE &&
+      (int(srcx) != last_move_dst.first ||
+       int(srcy) != last_move_dst.second) &&
       showPossibleMoves(last_move_dst.first, last_move_dst.second, false)) {
     hidePossibleMoves(false);
     err_queue.append("ERR: Previous move is not complete.");
@@ -917,6 +935,32 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     return ERR_INVALID_MOVE;
   }
 
+  if (game_state != STATE_CAN_START) {
+    QPair<int, int> color;
+
+    if (white_is_playing)
+      color = QPair<int, int>(MEN_WHITE, MEN_WHITE_KING);
+    else
+      color = QPair<int, int>(MEN_BLACK, MEN_BLACK_KING);
+
+    /** try to find any source for a move the current player should do
+      (i.e. must jump) instead of the move he's currently requesting */
+    for (int i = 0; i < board.size(); ++i) {
+      for (int j = 0; j < board[i].size(); ++j) {
+        if (isBlackBox(j, i) &&
+            (board[i][j] == color.first || board[i][j] == color.second) &&
+            j != int(srcx) && i != int(srcy) &&
+            showPossibleMoves(j, i, false)) {
+          err_queue.append("ERR: Some jump is necessary!");
+          hidePossibleMoves(false);
+          return ERR_INVALID_MOVE;
+        }
+      }
+    }
+
+    hidePossibleMoves(false);
+  }
+
   //FIXME
 //  if (game_state == STATE_WHITE && game_ai == Player::COLOR_BLACK) {
 //    adviceMove();
@@ -925,10 +969,10 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 //    else
 //      game_state = state_white
 //
-//    Q_EMIT refresh();
+//        Q_EMIT refresh();
 //    return ERR_OK;
 //  }
-//  else if (game_state == STATE_BLACK && game_ai == Player::COLOR_BLACK) {
+//  else if (game_state == STATE_BLACK && game_ai == Player::COLOR_WHITE) {
 //  }
 
   /** check presence in dst */
@@ -947,6 +991,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
   }
 
   int kickedx = -1, kickedy = -1;
+  men_t kicked = MEN_NONE;
 
   /** find the men who will be kicked (if any) */
   if (can_jump) {
@@ -970,9 +1015,17 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
       }
     }
 
-    if (kickedx != -1) {
+    /** current player has both the possibility of a simple move(s) and
+        jump(s), but prefers the move => be angry on him */
+    if (kickedx == -1) {
+      err_queue.append("ERR: Some jump is necessary!");
+      hidePossibleMoves(false);
+      return ERR_INVALID_MOVE;
+    }
+    else {
       if (! getPlayerFromCoord(kickedx, kickedy)->incKicked())
         game_state = STATE_END;
+      kicked = board[kickedy][kickedx];
       board[kickedy][kickedx] = MEN_NONE;
     }
   }
@@ -983,7 +1036,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
   board[dsty][dstx] = board[srcy][srcx];
   board[srcy][srcx] = MEN_NONE;
   //FIXME add support for network game!
-  appendMoveToXml(srcx, srcy, dstx, dsty, kickedx, kickedy, became_a_king);
+  appendMoveToXml(srcx, srcy, dstx, dsty,kickedx, kickedy, kicked, became_a_king);
 
   //FIXME what about network game?
   if (game_state != STATE_END) {
@@ -1023,6 +1076,13 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
   bool can_jump = false;
   possible_move_present = QPair<int, int>(-1, -1);
 
+  QPair<int, int> contra_color;
+
+  if (board[y][x] == MEN_BLACK_KING || board[y][x] == MEN_BLACK)
+    contra_color = QPair<int, int>(MEN_WHITE, MEN_WHITE_KING);
+  else
+    contra_color = QPair<int, int>(MEN_BLACK, MEN_BLACK_KING);
+
   /** is it a king? */
   if (board[y][x] == MEN_BLACK_KING || board[y][x] == MEN_WHITE_KING) {
     /**
@@ -1058,19 +1118,12 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
       FIND_FIRST_NON_MEN_NONE(x + i, y + i, br);
     }
 
-    QPair<int, int> contra_color;
-
-    if (board[y][x] == MEN_BLACK_KING)
-      contra_color = QPair<int, int>(MEN_WHITE, MEN_WHITE_KING);
-    else
-      contra_color = QPair<int, int>(MEN_BLACK, MEN_BLACK_KING);
-
     bool tl_can_jump = false;
     bool tr_can_jump = false;
     bool bl_can_jump = false;
     bool br_can_jump = false;
 
-    /** find out if it is oponnent's men/king and set the can_jump flag */
+    /** find out if it is opponent's men/king and set the can_jump flag */
     #define MAYBE_CAN_JUMP(dir) \
       if (isInBoundaries(dir.first, dir.second) && \
           (board[dir.second][dir.first] == contra_color.first || \
@@ -1109,79 +1162,48 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
       can_jump = true;
   }
   else {
+    /**
+     * nearx, neary ~ the first-hand boxes
+     * farx, fary ~ the boxes after the first-hand ones in the diagonal direction
+     */
+    #define FIND_POSSIBLE_MOVE_FOR_MEN(nearx, neary, farx, fary) \
+      if (isInBoundaries(nearx, neary)) { \
+        /** the nearest box is empty */ \
+        if (board[neary][nearx] == MEN_NONE) { \
+          board[neary][nearx] = MEN_POSSIBLE_MOVE; \
+          possible_move_present = QPair<int, int>(nearx, neary); \
+        } \
+        else { \
+          /** we can only jump over the opponent's men */ \
+          if ((board[neary][nearx] == contra_color.first || \
+               board[neary][nearx] == contra_color.second) && \
+              isInBoundaries(farx, fary) && \
+              board[fary][farx] == MEN_NONE) { \
+            board[fary][farx] = MEN_POSSIBLE_MOVE; \
+            possible_move_present = QPair<int, int>(farx, fary); \
+            can_jump = true; \
+          } \
+        } \
+      }
+
     // men_white => direction bottom
     if (board[y][x] == MEN_WHITE) {
       // bottom left
-      if (isInBoundaries(x -1, y +1)) {
-        if (board[y +1][x -1] == MEN_NONE) {
-          board[y +1][x -1] = MEN_POSSIBLE_MOVE;
-          possible_move_present = QPair<int, int>(x -1, y +1);
-        }
-        // some men/king
-        else {
-          if (isInBoundaries(x -2, y +2) &&
-              board[y +2][x -2] == MEN_NONE) {
-            board[y +2][x -2] = MEN_POSSIBLE_MOVE;
-            possible_move_present = QPair<int, int>(x -2, y +2);
-            can_jump = true;
-          }
-        }
-      }
-
+      FIND_POSSIBLE_MOVE_FOR_MEN(x -1, y +1, x -2, y +2);
       // bottom right
-      if (isInBoundaries(x +1, y +1)) {
-        if (board[y +1][x +1] == MEN_NONE) {
-          board[y +1][x +1] = MEN_POSSIBLE_MOVE;
-          possible_move_present = QPair<int, int>(x +1, y +1);
-        }
-        // some men/king
-        else {
-          if (isInBoundaries(x +2, y +2) &&
-              board[y +2][x +2] == MEN_NONE) {
-            board[y +2][x +2] = MEN_POSSIBLE_MOVE;
-            possible_move_present = QPair<int, int>(x +2, y +2);
-            can_jump = true;
-          }
-        }
-      }
+      FIND_POSSIBLE_MOVE_FOR_MEN(x +1, y +1, x +2, y +2);
     }
     // men_black => direction top
     else if (board[y][x] == MEN_BLACK) {
-      // tl
-      if (isInBoundaries(x -1, y -1)) {
-        if (board[y -1][x -1] == MEN_NONE) {
-          board[y -1][x -1] = MEN_POSSIBLE_MOVE;
-          possible_move_present = QPair<int, int>(x -1, y -1);
-        }
-        // some men/king
-        else {
-          if (isInBoundaries(x -2, y -2) &&
-              board[y -2][x -2] == MEN_NONE) {
-            board[y -2][x -2] = MEN_POSSIBLE_MOVE;
-            possible_move_present = QPair<int, int>(x -2, y -2);
-            can_jump = true;
-          }
-        }
-      }
-      // tr
-      if (isInBoundaries(x +1, y -1)) {
-        if (board[y -1][x +1] == MEN_NONE) {
-          board[y -1][x +1] = MEN_POSSIBLE_MOVE;
-          possible_move_present = QPair<int, int>(x +1, y -1);
-        }
-        // some men/king
-        else {
-          if (isInBoundaries(x +2, y -2) &&
-              board[y -2][x +2] == MEN_NONE) {
-            board[y -2][x +2] = MEN_POSSIBLE_MOVE;
-            possible_move_present = QPair<int, int>(x +2, y -2);
-            can_jump = true;
-          }
-        }
-      }
+      // top left
+      FIND_POSSIBLE_MOVE_FOR_MEN(x -1, y -1, x -2, y -2);
+      // top right
+      FIND_POSSIBLE_MOVE_FOR_MEN(x +1, y -1, x +2, y -2);
     }
   }
 
+  //FIXME
+  qDebug((can_jump) ? "CAN_JUMP-------------" : "CAN NOT JUMP--------------");
   if (do_emit) Q_EMIT refresh();
 
   return can_jump;
@@ -1469,6 +1491,13 @@ int Game::getRemotePort(void) {
  */
 QString Game::getFilePath(void) {
   return filepath;
+}
+
+/**
+ * @param filepath for saving
+ */
+void Game::setFilePath(QString fpath) {
+  filepath = fpath;
 }
 
 /** received only once */

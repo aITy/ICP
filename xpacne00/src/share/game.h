@@ -130,6 +130,7 @@ namespace XML {
   CONST_STR( STR_WHITE_KING   , "white_king"    );
   CONST_STR( STR_BLACK        , "black"         );
   CONST_STR( STR_BLACK_KING   , "black_king"    );
+  CONST_STR( STR_NONE         , "none"          );
   CONST_STR( STR_MOVES        , "moves"         );
   CONST_STR( STR_MOVE         , "move"          );
   CONST_STR( STR_SRCX         , "srcx"          );
@@ -242,6 +243,7 @@ class Game : public QObject {
     QHostAddress getRemoteAddr(void);
     int getRemotePort(void);
     QString getFilePath(void);
+    void setFilePath(QString);
 
   private:
     /** the whole game XML tree including history */
@@ -273,7 +275,8 @@ class Game : public QObject {
 
     /** create a new document template if none is existing yet */
     void initXml(void);
-    void appendMoveToXml(unsigned int, unsigned int, unsigned int, unsigned int, int, int, bool);
+    void appendMoveToXml(unsigned int, unsigned int, unsigned int, unsigned int,
+        int, int, men_t, bool);
     bool moveFromXml(bool forward = true);
     void syncXml(void);
     bool loadFromIcpSyntax(QString);

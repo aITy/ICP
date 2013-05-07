@@ -204,6 +204,8 @@ void App::refresh(void) {
     schedule_refresh();
   }
   else if (cmd_l.at(0) == "q!") {
+    /** prevent refreshing - notifier from whatever reason fires the signal :( */
+    disconnect(notifier, SIGNAL(activated(int)), this, SLOT(handleInput(void)));
     qtout << endl;
     Q_EMIT finished();
   }
@@ -307,6 +309,7 @@ void App::refresh(void) {
 
       if (! cmd_l.isEmpty()) {
         fpath.append(cmd_l.join(" "));
+        g->setFilePath(fpath);
       }
       else if (! g->getFilePath().isEmpty()) {
         fpath.append(g->getFilePath());
