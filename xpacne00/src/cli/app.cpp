@@ -43,9 +43,6 @@ App::App(QCoreApplication *_parent) :
     schedule_refresh();
   }
 
-  qtout << "addr " << server->serverAddress().toString() << " port " <<
-    QString::number(server->serverPort()) << endl;
-
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read, this);
   /** it does line buffering after \n character => called after one line given
       for immediate reaction use setbuf(stdin, _IOFBF) */
@@ -185,8 +182,10 @@ void App::refresh(void) {
       "  ab                    alias of black player" << endl <<
       "  n                     new game" << endl <<
       "  nn <host> <port> w|b  new network game" << endl <<
+      "  nc w|b                new game against computer AI (w ~ I want to be" << endl <<
+      "                           the white player and AI will be black; b ~ vice versa)" << endl <<
       "  l <file> [w|b]        load & play game from file; w ~ white, b ~ black" << endl <<
-      "                          (color choice is needed for a network game)" << endl <<
+      "                          (color choice is mandatory for a network game)" << endl <<
       "  r <file>              replay game from file" << endl <<
       "  s [<file>]            save game to file" << endl <<
       "  m c3 b4               droughtsmen/king move" << endl <<
@@ -239,32 +238,38 @@ void App::refresh(void) {
       QHostAddress addr;
       if (addr.setAddress(cmd_l.at(1))) {
         if (! g->gameRemote(addr, QString(cmd_l.at(2)).toUInt(), cl))
-          qterr << "ERR: " << g->getError() << endl;
+          qterr << g->getError() << endl;
       }
       else {
         qterr << "ERR: Invalid IP addr/hostname: " << cmd_l.at(1) << endl;
       }
     }
   }
+  else if (cmd_l.at(0) == "nn") {
+    if (cmd_l.size() == 2) {
+      if (cmd_l.at(1) == "w")
+        g->gameLocal(true);
+      else if (cmd_l.at(1) == "b")
+        g->gameLocal(false);
+    }
+  }
   else if (cmd_l.at(0) == "l") {
     Player::color_t cl = Player::COLOR_DONT_KNOW;
 
     if (cmd_l.size() == 3) {
-      if (cmd_l.at(3) == "w") {
+      if (cmd_l.at(2) == "w") {
         cl = Player::COLOR_WHITE;
       }
-      else if (cmd_l.at(3) == "b") {
+      else if (cmd_l.at(2) == "b") {
         cl = Player::COLOR_BLACK;
       }
       else {
-        qterr << "ERR: Invalid player color: " << cmd_l.at(3) << endl;
+        qterr << "ERR: Invalid player color: " << cmd_l.at(2) << endl;
         return;
       }
     }
 
     if (cmd_l.size() == 2 || cmd_l.size() == 3) {
-
-      qDebug("howk00");//FIXME
       if (! g->gameFromFile(cmd_l.at(1), cl))
 <<<<<<< HEAD
         qterr << "ERR: " << g->getError() << endl;
@@ -274,7 +279,6 @@ void App::refresh(void) {
     }
   }
   else if (cmd_l.at(0) == "r") {
-      qDebug("howk01");//FIXME
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1), false))
 <<<<<<< HEAD
@@ -285,7 +289,6 @@ void App::refresh(void) {
     }
   }
   else if (cmd_l.at(0) == "rt") {
-      qDebug("howk02");//FIXME
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1), true))
 <<<<<<< HEAD
