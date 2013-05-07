@@ -187,7 +187,7 @@ void App::refresh(void) {
       "  l <file> [w|b]        load & play game from file; w ~ white, b ~ black" << endl <<
       "                          (color choice is mandatory for a network game)" << endl <<
       "  r <file>              replay game from file" << endl <<
-      "  s [<file>]            save game to file" << endl <<
+      "  s x|i [<file>]        save game to file (x ~ in XML syntax, i ~ in ICP syntax)" << endl <<
       "  m c3 b4               droughtsmen/king move" << endl <<
       "  pm c3                 show possible moves" << endl <<
       "  hm                    help with move (using AI)" << endl <<
@@ -271,54 +271,59 @@ void App::refresh(void) {
 
     if (cmd_l.size() == 2 || cmd_l.size() == 3) {
       if (! g->gameFromFile(cmd_l.at(1), cl))
-<<<<<<< HEAD
-        qterr << "ERR: " << g->getError() << endl;
-=======
         qterr << g->getError() << endl;
->>>>>>> honza_local
     }
   }
   else if (cmd_l.at(0) == "r") {
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1), false))
-<<<<<<< HEAD
-        qterr << "ERR: " << g->getError() << endl;
-=======
         qterr << g->getError() << endl;
->>>>>>> honza_local
     }
   }
   else if (cmd_l.at(0) == "rt") {
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1), true))
-<<<<<<< HEAD
-        qterr << "ERR: " << g->getError() << endl;
-=======
         qterr << g->getError() << endl;
->>>>>>> honza_local
     }
   }
   else if (cmd_l.at(0) == "s") {
-    QString fpath;
+    if (cmd_l.size() >= 2) {
+      bool want_xml;
 
-    if (cmd_l.size() == 2) {
-      fpath.append(cmd_l.at(1));
-    }
-    else if (! g->getFilePath().isEmpty()) {
-      fpath.append(g->getFilePath());
-    }
-    else {
-      qterr << "ERR: No file to save to." << endl;
-      return;
-    }
+      if (cmd_l.at(1) == "x") {
+        want_xml = true;
+      }
+      else if (cmd_l.at(1) == "i") {
+        want_xml = false;
+      }
+      else {
+        qterr << "ERR: Unknown file type specified: " << cmd_l.at(1) << endl;
+        return;
+      }
 
-    QFile f(fpath);
-    /** overwrite file */
-    f.open(QIODevice::WriteOnly | QIODevice::Truncate);
-    QTextStream fs(&f);
-    fs << g->getXmlStr();
-    /** tmp gets synced and closed after its destroyal */
-    schedule_refresh();
+      QString fpath;
+      cmd_l.removeFirst();
+      cmd_l.removeFirst();
+
+      if (! cmd_l.isEmpty()) {
+        fpath.append(cmd_l.join(" "));
+      }
+      else if (! g->getFilePath().isEmpty()) {
+        fpath.append(g->getFilePath());
+      }
+      else {
+        qterr << "ERR: No file to save to." << endl;
+        return;
+      }
+
+      QFile f(fpath);
+      /** overwrite file */
+      f.open(QIODevice::WriteOnly | QIODevice::Truncate);
+      QTextStream fs(&f);
+      fs << ((want_xml) ? g->getXmlStr() : g->getIcpSyntaxStr());
+      /** tmp gets synced and closed after its destroyal */
+      schedule_refresh();
+    }
   }
   else if (cmd_l.at(0) == "m") {
     if (cmd_l.size() == 3) {

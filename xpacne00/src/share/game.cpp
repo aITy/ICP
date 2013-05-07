@@ -679,9 +679,8 @@ bool Game::gameLocal(bool ai_is_black) {
   }
   else {
     game_ai = Player::COLOR_WHITE;
-    /** last complete (finished) move had the black player */
+    adviceMove();
     game_state = STATE_BLACK;
-    move(0, 0, 0, 0, false);
   }
 
   Q_EMIT refresh();
@@ -908,20 +907,21 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
       (black_is_playing && game_state == STATE_BLACK)) {
     err_queue.append("ERR: Players must alternate.");
     return ERR_INVALID_MOVE;
+  }
 
   //FIXME
-  if (game_state == STATE_WHITE && game_ai == Player::COLOR_BLACK) {
-    adviceMove();
-    if (can make another move)
-      call move();
-    else
-      game_state = state_white
-
-    Q_EMIT refresh();
-    return ERR_OK;
-  }
-  else if (game_state == STATE_BLACK && game_ai == Player::COLOR_BLACK) {
-  }
+//  if (game_state == STATE_WHITE && game_ai == Player::COLOR_BLACK) {
+//    adviceMove();
+//    if (can make another move)
+//      call move();
+//    else
+//      game_state = state_white
+//
+//    Q_EMIT refresh();
+//    return ERR_OK;
+//  }
+//  else if (game_state == STATE_BLACK && game_ai == Player::COLOR_BLACK) {
+//  }
 
   /** check presence in dst */
   if (board[dsty][dstx] != MEN_NONE) {
@@ -931,46 +931,46 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 
   /** check if the dst is on one of 2 or 4 allowed diagonals and in the right distance */
   bool can_jump = showPossibleMoves(srcx, srcy, false);
-  can_jump = can_jump;//FIXME delete
 
   if (board[dsty][dstx] != MEN_POSSIBLE_MOVE) {
     hidePossibleMoves(false);
-    err_queue.append("ERR: Destination not on the same diagonal!");
+    err_queue.append("ERR: Destination not on the same diagonal or too far from source or jumping over too much men!");
     return ERR_INVALID_MOVE;
   }
 
-  hidePossibleMoves(false);
+  int kickedx = -1, kickedy = -1;
 
-  //FIXME
-  /*
+  /** find the men who will be kicked */
   if (can_jump) {
-    if (KING) {
-      //try all 4 diagonals for dst[y][x]
-      // na diagonale mezi src a dst musi byt pouze souperovy kameny
-      //diagonal => the diff(x) and diff(y) must be same for src and dst
-    }
-    else if (white_is_playing) {
-      // try direction bottom (2 diagonals)
-    }
-    else {
-      // try direction top (2 diagonals)
+    /** get the right direction vector */
+    int mulx = (dstx < srcx) ? -1 : 1;
+    int muly = (dsty < srcy) ? -1 : 1;
+
+    /** find nearest non-possible-move box on the particular diagonal
+        (board.size() for sure to prevent infinite looping) */
+    for (int i = 1; i < board.size(); ++i) {
+      int _x = srcx + (i * mulx);
+      int _y = srcy + (i * muly);
+
+      if (isInBoundaries(_x, _y) &&
+          board[_y][_x] != MEN_POSSIBLE_MOVE) {
+        kickedx = _x;
+        kickedy = _y;
+        break;
+      }
     }
 
-    int kickedx = (srcx > dstx) ? srcx -1 : srcx +1;
-    int kickedy = (srcy > dsty) ? dsty -1 : dsty +1;
     if (! getPlayerFromCoord(kickedx, kickedy)->incKicked())
       game_state = STATE_END;
     board[kickedy][kickedx] = MEN_NONE;
   }
-  */
+
+  hidePossibleMoves(false);
 
   bool became_a_king = isBecomingAKing(board[srcy][srcx], dsty);
-
   board[dsty][dstx] = board[srcy][srcx];
   board[srcy][srcx] = MEN_NONE;
-
   //FIXME add support for network game!
-  int kickedx = -1, kickedy = -1;
   appendMoveToXml(srcx, srcy, dstx, dsty, kickedx, kickedy, became_a_king);
 
   //FIXME what about network game?
@@ -1011,7 +1011,53 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
   bool can_jump = false;
   possible_move_present = QPair<int, int>(-1, -1);
 
+  /** is it a king? */
   if (board[y][x] == MEN_BLACK_KING || board[y][x] == MEN_WHITE_KING) {
+//      int _x, _y;
+//      /** traverse all 4 diagonals (board.size() to prevent infinite loop) */
+//      //FIXME read only consecutive empty boxes
+//      //      if the current box is an opponent's men,
+//      //      read further consecutive empty boxes
+//
+//      /** first non-MEN_NONE box in the particular direction */
+//      QPair<int, int> tl(-1, -1);
+//      QPair<int, int> tr(-1, -1);
+//      QPair<int, int> bl(-1, -1);
+//      QPair<int, int> br(-1, -1);
+/*
+//      #define FIND_FIRST_NON_MEN_NONE(_x, _y, dir) \
+//        if (isInBoundaries((_x), (_y))) { \
+//          if (board[(_y)][(_x)] == MEN_NONE) \
+//            board[(_y)][(_x)] = MEN_POSSIBLE_MOVE; \
+//          else \
+//            dir = QPair<int, int>((_x), (_y)); \
+//        }
+*/
+//      for (int i = 1; i < board.size(); ++i) {
+//        FIND_FIRST_NON_MEN_NONE(x - i, y - i, tl);
+//        FIND_FIRST_NON_MEN_NONE(x + i, y - i, tr);
+//        FIND_FIRST_NON_MEN_NONE(x - i, y + i, bl);
+//        FIND_FIRST_NON_MEN_NONE(x + i, y + i, br);
+//      }
+//
+//          if ( (board[y][x] == MEN_BLACK_KING && (
+//                board[_y][_x] == MEN_BLACK ||
+//                board[_y][_x] == MEN_BLACK_KING)) ||
+//              (black_is_playing && (
+//                board[_y][_x] == MEN_WHITE ||
+//                board[_y][_x] == MEN_WHITE_KING)) ) {
+//            kickedx = _x;
+//            kickedy = _x;
+//            break;
+//          }
+//        }
+//
+//        FIND_AND_SET_KICKED(, ); /** tl */
+//        FIND_AND_SET_KICKED(, ); /** tr */
+//        FIND_AND_SET_KICKED(, ); /** bl */
+//        FIND_AND_SET_KICKED(, ); /** br */
+//      }
+
     /** indicators if the diagonal can be processed further */
     //bool tl = true, tr = true, bl = true, br = true;
 
