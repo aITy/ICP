@@ -72,7 +72,7 @@ void QTimerImproved::resume(void) {
     QDateTime dt;
     begin = dt.toMSecsSinceEpoch();
     singleShotScheduledInternally = true;
-    singleShot(end - begin, this, SLOT(resendTimeout));
+    singleShot((end - begin) % period, this, SLOT(resendTimeout));
   }
 }
 
@@ -83,11 +83,19 @@ bool QTimerImproved::isPaused(void) {
 
 //TODO OK
 /** x ~ a-h; y ~ 0-8 */
-IcpSyntaxParser::pair_uint_t IcpSyntaxParser::strCoordToUInt(QString s) {
+IcpSyntaxParser::pair_uint_t IcpSyntaxParser::strCoordToUInt(QString s, bool *ok) {
   /** allow loading only 8x8 sized boards */
-  Q_ASSERT(s.at(0) >= 'a' && s.at(0) <= 'h' &&
-      s.at(1) >= '1' && s.at(1) <= '8');
+  if (! (s.at(0) >= 'a' && s.at(0) <= 'h' &&
+         s.at(1) >= '1' && s.at(1) <= '8') ) {
+    if (ok != NULL) *ok = false;
+
+    return pair_uint_t(0, 0);
+  }
+
   pair_uint_t p(s.at(0).toLatin1() - 'a', s.at(1).toLatin1() - '1');
+
+  if (ok != NULL) *ok = true;
+
   return p;
 }
 
@@ -445,13 +453,13 @@ bool Game::loadFromIcpSyntax(QString s) {
       QString tmp = itt.next();
 
       IcpSyntaxParser::pair_uint_t pair1 =
-        IcpSyntaxParser::strCoordToUInt(tmp);
+        IcpSyntaxParser::strCoordToUInt(tmp, NULL);
       tmp.remove(0, 2);  /**< remove c3 */
 
       while (! tmp.isEmpty()) {
         tmp.remove(0, 1);  /**< remove x - */
         IcpSyntaxParser::pair_uint_t pair2 =
-          IcpSyntaxParser::strCoordToUInt(tmp);
+          IcpSyntaxParser::strCoordToUInt(tmp, NULL);
 
         if (move(pair1.first, pair1.second, pair2.first, pair2.second, true))
           return false;
@@ -940,7 +948,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 
   int kickedx = -1, kickedy = -1;
 
-  /** find the men who will be kicked */
+  /** find the men who will be kicked (if any) */
   if (can_jump) {
     /** get the right direction vector */
     int mulx = (dstx < srcx) ? -1 : 1;
@@ -949,20 +957,24 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     /** find nearest non-possible-move box on the particular diagonal
         (board.size() for sure to prevent infinite looping) */
     for (int i = 1; i < board.size(); ++i) {
-      int _x = srcx + (i * mulx);
-      int _y = srcy + (i * muly);
+      int _x = int(srcx) + (i * mulx);
+      int _y = int(srcy) + (i * muly);
 
-      if (isInBoundaries(_x, _y) &&
-          board[_y][_x] != MEN_POSSIBLE_MOVE) {
+      /** just for case the player does not want to jump */
+      if (_x == int(dstx) && _y == int(dsty)) break;
+
+      if (isInBoundaries(_x, _y) && board[_y][_x] != MEN_POSSIBLE_MOVE) {
         kickedx = _x;
         kickedy = _y;
         break;
       }
     }
 
-    if (! getPlayerFromCoord(kickedx, kickedy)->incKicked())
-      game_state = STATE_END;
-    board[kickedy][kickedx] = MEN_NONE;
+    if (kickedx != -1) {
+      if (! getPlayerFromCoord(kickedx, kickedy)->incKicked())
+        game_state = STATE_END;
+      board[kickedy][kickedx] = MEN_NONE;
+    }
   }
 
   hidePossibleMoves(false);
@@ -1013,66 +1025,88 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
 
   /** is it a king? */
   if (board[y][x] == MEN_BLACK_KING || board[y][x] == MEN_WHITE_KING) {
-//      int _x, _y;
-//      /** traverse all 4 diagonals (board.size() to prevent infinite loop) */
-//      //FIXME read only consecutive empty boxes
-//      //      if the current box is an opponent's men,
-//      //      read further consecutive empty boxes
-//
-//      /** first non-MEN_NONE box in the particular direction */
-//      QPair<int, int> tl(-1, -1);
-//      QPair<int, int> tr(-1, -1);
-//      QPair<int, int> bl(-1, -1);
-//      QPair<int, int> br(-1, -1);
-/*
-//      #define FIND_FIRST_NON_MEN_NONE(_x, _y, dir) \
-//        if (isInBoundaries((_x), (_y))) { \
-//          if (board[(_y)][(_x)] == MEN_NONE) \
-//            board[(_y)][(_x)] = MEN_POSSIBLE_MOVE; \
-//          else \
-//            dir = QPair<int, int>((_x), (_y)); \
-//        }
-*/
-//      for (int i = 1; i < board.size(); ++i) {
-//        FIND_FIRST_NON_MEN_NONE(x - i, y - i, tl);
-//        FIND_FIRST_NON_MEN_NONE(x + i, y - i, tr);
-//        FIND_FIRST_NON_MEN_NONE(x - i, y + i, bl);
-//        FIND_FIRST_NON_MEN_NONE(x + i, y + i, br);
-//      }
-//
-//          if ( (board[y][x] == MEN_BLACK_KING && (
-//                board[_y][_x] == MEN_BLACK ||
-//                board[_y][_x] == MEN_BLACK_KING)) ||
-//              (black_is_playing && (
-//                board[_y][_x] == MEN_WHITE ||
-//                board[_y][_x] == MEN_WHITE_KING)) ) {
-//            kickedx = _x;
-//            kickedy = _x;
-//            break;
-//          }
-//        }
-//
-//        FIND_AND_SET_KICKED(, ); /** tl */
-//        FIND_AND_SET_KICKED(, ); /** tr */
-//        FIND_AND_SET_KICKED(, ); /** bl */
-//        FIND_AND_SET_KICKED(, ); /** br */
-//      }
+    /**
+     * it works like following:
+     *   1) read only consecutive empty boxes until exception occurs
+     *   2) if the current box is an opponent's men,
+     *   3) read further consecutive empty boxes until exception occurs
+     */
 
-    /** indicators if the diagonal can be processed further */
-    //bool tl = true, tr = true, bl = true, br = true;
+    /** first non-MEN_NONE box in the particular direction */
+    QPair<int, int> tl(-1, -1);
+    QPair<int, int> tr(-1, -1);
+    QPair<int, int> bl(-1, -1);
+    QPair<int, int> br(-1, -1);
 
-    //FIXME
-    ///** gradually increase the "ring" */
-    //int i = 1;
-    //while (tl || tr || bl || br) {
-    //  if (tl && x - i >= 0 && y - i >= 0 &&
-    //      board[x - i][y - i] == MEN_NONE)
-    //    board[x - i][y - i] = MEN_POSSIBLE_MOVE;
-    //  else
-    //    tl = false;
+    #define FIND_FIRST_NON_MEN_NONE(_x, _y, dir) \
+      /** prevent out of boundary and rewrite of the last value */ \
+      if (isInBoundaries((_x), (_y)) && dir.first == -1) { \
+        if (board[(_y)][(_x)] == MEN_NONE) { \
+          board[(_y)][(_x)] = MEN_POSSIBLE_MOVE; \
+          possible_move_present = QPair<int, int>((_x), (_y)); \
+        } \
+        else { \
+          dir = QPair<int, int>((_x), (_y)); \
+        } \
+      }
 
-    //  ++i;
-    //}
+    /** traverse all 4 diagonals (board.size() to prevent infinite loop) */
+    for (int i = 1; i < board.size(); ++i) {
+      FIND_FIRST_NON_MEN_NONE(x - i, y - i, tl);
+      FIND_FIRST_NON_MEN_NONE(x + i, y - i, tr);
+      FIND_FIRST_NON_MEN_NONE(x - i, y + i, bl);
+      FIND_FIRST_NON_MEN_NONE(x + i, y + i, br);
+    }
+
+    QPair<int, int> contra_color;
+
+    if (board[y][x] == MEN_BLACK_KING)
+      contra_color = QPair<int, int>(MEN_WHITE, MEN_WHITE_KING);
+    else
+      contra_color = QPair<int, int>(MEN_BLACK, MEN_BLACK_KING);
+
+    bool tl_can_jump = false;
+    bool tr_can_jump = false;
+    bool bl_can_jump = false;
+    bool br_can_jump = false;
+
+    /** find out if it is oponnent's men/king and set the can_jump flag */
+    #define MAYBE_CAN_JUMP(dir) \
+      if (isInBoundaries(dir.first, dir.second) && \
+          (board[dir.second][dir.first] == contra_color.first || \
+           board[dir.second][dir.first] == contra_color.second)) \
+        dir ## _can_jump = true;
+
+    MAYBE_CAN_JUMP(tl);
+    MAYBE_CAN_JUMP(tr);
+    MAYBE_CAN_JUMP(bl);
+    MAYBE_CAN_JUMP(br);
+
+    /** make sure we can really jump in that particular direction */
+    #define DECIDE_THE_JUMP(_x, _y, dir) \
+      if (dir ## _can_jump) { \
+        for (int i = 1; i < board.size(); ++i) { \
+          if (isInBoundaries((_x), (_y))) { \
+            if (board[(_y)][(_x)] == MEN_NONE) { \
+              board[(_y)][(_x)] = MEN_POSSIBLE_MOVE; \
+              possible_move_present = QPair<int, int>((_x), (_y)); \
+            } \
+            else { \
+              if (i == 1) \
+                dir ## _can_jump = false; \
+              break; \
+            } \
+          } \
+        } \
+      }
+
+    DECIDE_THE_JUMP(tl.first - i, tl.second - i, tl);
+    DECIDE_THE_JUMP(tr.first + i, tr.second - i, tr);
+    DECIDE_THE_JUMP(bl.first - i, bl.second + i, bl);
+    DECIDE_THE_JUMP(br.first + i, br.second + i, br);
+
+    if (tl_can_jump || tr_can_jump || bl_can_jump || br_can_jump)
+      can_jump = true;
   }
   else {
     // men_white => direction bottom

@@ -49,7 +49,7 @@ class IcpSyntaxParser {
   public:
     typedef QPair<unsigned int, unsigned int> pair_uint_t;
     typedef QPair<QString, QString> pair_str_t;
-    static pair_uint_t strCoordToUInt(QString);
+    static pair_uint_t strCoordToUInt(QString, bool *);
     static pair_str_t intToStrCoord(unsigned int, unsigned int);
 };
 

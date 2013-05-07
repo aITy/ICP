@@ -327,10 +327,18 @@ void App::refresh(void) {
   }
   else if (cmd_l.at(0) == "m") {
     if (cmd_l.size() == 3) {
+      bool ok;
       IcpSyntaxParser::pair_uint_t coord_src =
-        IcpSyntaxParser::strCoordToUInt(cmd_l.at(1));
+        IcpSyntaxParser::strCoordToUInt(cmd_l.at(1), &ok);
+
+      if (! ok)
+        qterr << "ERR: bad coordinates given: " << cmd_l.at(1) << endl;
+
       IcpSyntaxParser::pair_uint_t coord_dst =
-        IcpSyntaxParser::strCoordToUInt(cmd_l.at(2));
+        IcpSyntaxParser::strCoordToUInt(cmd_l.at(2), &ok);
+
+      if (! ok)
+        qterr << "ERR: bad coordinates given: " << cmd_l.at(1) << endl;
 
       if (g->move(coord_src.first, coord_src.second,
                   coord_dst.first, coord_dst.second)) {
@@ -343,8 +351,13 @@ void App::refresh(void) {
   }
   else if (cmd_l.at(0) == "pm") {
     if (cmd_l.size() == 2) {
+      bool ok;
       IcpSyntaxParser::pair_uint_t coord =
-        IcpSyntaxParser::strCoordToUInt(cmd_l.at(1));
+        IcpSyntaxParser::strCoordToUInt(cmd_l.at(1), &ok);
+
+      if (! ok)
+        qterr << "ERR: bad coordinates given: " << cmd_l.at(1) << endl;
+
       g->showPossibleMoves(coord.first, coord.second);
       schedule_refresh();
     }
