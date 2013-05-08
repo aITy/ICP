@@ -24,7 +24,7 @@
   PRINT_STATE(STATE_REPLAY_STEP         ); \
   PRINT_STATE(STATE_REPLAY_TIMED        ); \
   PRINT_STATE(STATE_REPLAY_STOP         ); \
-  PRINT_STATE(STATE_END                 ); \
+  PRINT_STATE(STATE_END                 );
 
 //TODO OK
 void QTimerImproved::resendTimeout(void) {
@@ -349,11 +349,7 @@ bool Game::moveFromXml(bool forward) {
       mv = mv.nextSibling();
 
       /** we can't do any move further */
-      if (mv.isNull()) {
-        if (! isReplaying()) game_state = STATE_END;
-
-        return false;
-      }
+      if (mv.isNull()) return false;
     }
 
     current_move_index++;
@@ -767,6 +763,7 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
       doc->clear();  /**< tidy up garbage from initXml() */
       return false;
     }
+    PRINT_CUR_STATE;//FIXME
   }
   /** try to parse the file as XML */
   else if (f.seek(0) && doc->setContent(&f)) {
@@ -777,6 +774,7 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
 
       /** interpret all available moves */
       while (moveFromXml(true));
+      PRINT_CUR_STATE;//FIXME
     }
     /** network game */
     else if (doc->documentElement().firstChildElement(XML::STR_GAME).
@@ -787,6 +785,7 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
 
       /** interpret all available moves */
       while (moveFromXml(true));
+      PRINT_CUR_STATE;//FIXME
 
       if (! gameRemote(
             QHostAddress(doc->documentElement().
@@ -1047,7 +1046,10 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
   hidePossibleMoves(false);
 
   bool became_a_king = isBecomingAKing(board[srcy][srcx], dsty);
-  board[dsty][dstx] = board[srcy][srcx];
+  if (became_a_king)
+    board[dsty][dstx] = (white_is_playing) ? MEN_WHITE_KING : MEN_BLACK_KING;
+  else
+    board[dsty][dstx] = board[srcy][srcx];
   board[srcy][srcx] = MEN_NONE;
   //FIXME add support for network game!
   appendMoveToXml(srcx, srcy, dstx, dsty,kickedx, kickedy, kicked, became_a_king);
