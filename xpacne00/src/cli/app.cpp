@@ -284,7 +284,7 @@ void App::refresh(void) {
   }
   else if (cmd_l.at(0) == "r") {
     if (cmd_l.size() == 2) {
-      if (! g->gameFromFile(cmd_l.at(1), false))
+      if (! g->gameFromFile(cmd_l.at(1)))
         qterr << g->getError() << endl;
     }
   }
@@ -381,6 +381,7 @@ void App::refresh(void) {
       }
     }
 
+    /** false ~ backward */
     g->replayMove(steps, false);
   }
   else if (cmd_l.at(0) == "fw") {
@@ -396,6 +397,7 @@ void App::refresh(void) {
       }
     }
 
+    /** true ~ forward */
     g->replayMove(steps, true);
   }
   else if (cmd_l.at(0) == "p") {

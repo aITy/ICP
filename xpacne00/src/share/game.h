@@ -212,8 +212,7 @@ class Game : public QObject {
     bool gameLocal(bool);
     bool gameFromFile(QString, Player::color_t);
     //FIXME some flag, that the game can not be user-modified while replaying
-    //  tohle prepne do stavu PAUSE
-    bool gameFromFile(QString, bool);  /**< game replay */
+    bool gameFromFile(QString);  /**< game replay (switches immediately to stopped state) */
     //FIXME adjust to state_t!!!
     bool isRunning(void);  /**< is the game running in either mode? (e.g. replaying loaded game; playing network game etc.) */
     bool isLocal(void);

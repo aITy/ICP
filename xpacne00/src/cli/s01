@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<!-- standalone because we have no DTD for it -->
+<draughts version="1.0">
+ <game port="" host="" type="local"/>
+ <players>
+  <black>Player Black</black>
+  <white>Player White</white>
+ </players>
+ <moves>
+  <move became-a-king="false" dstx="4" srcx="5" dsty="3" srcy="2" kicked="none" kickedx="-1" kickedy="-1"/>
+  <move became-a-king="false" dstx="3" srcx="4" dsty="4" srcy="5" kicked="none" kickedx="-1" kickedy="-1"/>
+  <move became-a-king="false" dstx="6" srcx="7" dsty="3" srcy="2" kicked="none" kickedx="-1" kickedy="-1"/>
+  <move became-a-king="false" dstx="5" srcx="3" dsty="2" srcy="4" kicked="white" kickedx="4" kickedy="3"/>
+  <move became-a-king="false" dstx="4" srcx="6" dsty="3" srcy="1" kicked="black" kickedx="5" kickedy="2"/>
+ </moves>
+</draughts>

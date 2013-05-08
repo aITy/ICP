@@ -738,6 +738,8 @@ bool Game::gameLocal(bool ai_is_black) {
 
 /**
  * new game from file => jump to end (interpret moves between, of course)
+ * @param filepath
+ * @param color of the local player in the network game (for solely local game use Player::COLOR_DONT_KNOW)
  * @return true if OK
  */
 //TODO OK
@@ -818,7 +820,7 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
  * @return true if OK
  */
 //TODO OK
-bool Game::gameFromFile(QString s, bool timed) {
+bool Game::gameFromFile(QString s) {
   if (isRunning()) return false;
 
   filepath = s;
@@ -856,12 +858,6 @@ bool Game::gameFromFile(QString s, bool timed) {
   }
 
   prepareNewTimer();
-
-  if (timed) {
-    replay_timer->start();
-    game_state = STATE_REPLAY_TIMED;
-  }
-
   return true;
 }
 
@@ -1350,14 +1346,19 @@ bool Game::replayMoveToggle(void) {
 
   Q_ASSERT(replay_timer != NULL);
 
-  if (replay_timer->isPaused())
+  if (replay_timer->isPaused()) {
     replay_timer->resume();
-  else if (replay_timer->isActive())
+    game_state = STATE_REPLAY_TIMED;
+  }
+  else if (replay_timer->isActive()) {
     replay_timer->pause();
-  else
+    game_state = STATE_REPLAY_STEP;
+  }
+  else {
     replay_timer->start();
+    game_state = STATE_REPLAY_TIMED;
+  }
 
-  game_state = STATE_REPLAY_TIMED;
   return true;
 }
 
@@ -1429,48 +1430,63 @@ QString Game::getXmlStr(void) {
  *        false: get all moves
  */
 QString Game::getIcpSyntaxStr(bool to_current_move_index) {
-  to_current_move_index = to_current_move_index;//FIXME delete
-  QString res;
-  //FIXME only for debug
-  return res;
+  if (doc == NULL) return "";
 
-//  if (! isRunning()) return res;
-//
-//  Q_ASSERT(doc != NULL);
-//  syncXml();
-//  QDomElement mv(doc->documentElement().
-//  firstChildElement(XML::STR_MOVES).firstChildElement(XML::STR_MOVE));
-//
-//  if (mv.isNull()) return res;
-//
-//  if (to_current_move_index) {
-//    int srcx, srcy, dstx, dsty;
-//    int last_dstx = -1, last_dsty = -1;
-//    int i;
-//    /** get to the current index */
-//    for (i = 0; i <= current_move_index; ++i) {
-//      if (mv.isNull()) {
-//        break;
-//      }
-//      else {
-//        QDomNamedNodeMap map = mv.attributes();
-//        srcx = QString(map.namedItem(XML::STR_SRCX).nodeValue()).toUInt();
-//        srcy = QString(map.namedItem(XML::STR_SRCY).nodeValue()).toUInt();
-//        dstx = QString(map.namedItem(XML::STR_DSTX).nodeValue()).toUInt();
-//        dsty = QString(map.namedItem(XML::STR_DSTY).nodeValue()).toUInt();
-//        IcpSyntaxParser::pair_str_t tmp = IcpSyntaxParser::intToStrCoord(
-//              );
-//        mv = mv.nextSibling();
-//      }
-//    }
-//  }
-//  else {
-//    while (! mv.isNull()) {
-//      res.append(mv.);
-//    }
-//  }
-//
-//  return res;
+  QString res;
+  syncXml();
+  QDomNode mv(doc->documentElement().
+      firstChildElement(XML::STR_MOVES).firstChildElement(XML::STR_MOVE));
+
+  int srcx, srcy, dstx, dsty;
+  QString last_coord;
+  bool processing_white = false;
+  bool first_run = true;
+
+  int i = 1;
+  while (! mv.isNull()) {
+    if (to_current_move_index && (i -2) >= current_move_index)
+      break;
+
+    QDomNamedNodeMap map = mv.attributes();
+    srcx = map.namedItem(XML::STR_SRCX).nodeValue().toUInt();
+    srcy = map.namedItem(XML::STR_SRCY).nodeValue().toUInt();
+    dstx = map.namedItem(XML::STR_DSTX).nodeValue().toUInt();
+    dsty = map.namedItem(XML::STR_DSTY).nodeValue().toUInt();
+    bool kicked = (map.namedItem(XML::STR_KICKED).nodeValue() ==
+        XML::STR_NONE) ? false : true;
+
+    IcpSyntaxParser::pair_str_t tmp =
+      IcpSyntaxParser::intToStrCoord(srcx, srcy);
+    QString src = tmp.first + tmp.second;
+
+    tmp = IcpSyntaxParser::intToStrCoord(dstx, dsty);
+    QString dst = tmp.first + tmp.second;
+
+    if (src == last_coord) {
+      /** append the dst to the current - it can be only jump, nothing else */
+      res.append("x" + dst);
+    }
+    else {
+      if (first_run) {
+        first_run = false;
+        res.append(QString::number(i) + ".");
+        ++i;
+      }
+      else if (! processing_white) {
+        res.append("\n");
+        res.append(QString::number(i) + ".");
+        ++i;
+      }
+
+      res.append(" " + src + ((kicked) ? "x" : "-") + dst);
+      processing_white = (processing_white) ? false : true;
+    }
+
+    last_coord = dst;
+    mv = mv.nextSibling();
+  }
+
+  return res;
 }
 
 //TODO OK
@@ -1566,6 +1582,7 @@ void Game::gotDisconnected(void) {
 
 void Game::gotTimeout(void) {
   /** move by 1 forward */
-  replayMove(1, true);
+  if (! replayMove(1, true))
+    disconnect(replay_timer, SIGNAL(newTimeout()), this, SLOT(gotTimeout()));
   Q_EMIT refresh();
 }
