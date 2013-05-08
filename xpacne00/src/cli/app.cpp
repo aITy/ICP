@@ -59,6 +59,8 @@ App::~App(void) {
   if (notifier != NULL) delete notifier;
 }
 
+#define RETURN_AND_CLEAR cmd_l.clear(); return;
+
 void App::refresh(void) {
   /** header and content are not needed for user answers */
   qtout << "server running on " << server->serverAddress().toString() <<
@@ -157,12 +159,12 @@ void App::refresh(void) {
       line = qtin.readLine();
       if (line == "y") {
         schedule_refresh();
-        return;
+        RETURN_AND_CLEAR;
       }
       else if (line == "n") {
         prepareNewGame();
         schedule_refresh();
-        return;
+        RETURN_AND_CLEAR;
       }
     }
   }
@@ -183,20 +185,24 @@ void App::refresh(void) {
       "  n                     new game" << endl <<
       "  nn <host> <port> w|b  new network game" << endl <<
       "  nc w|b                new game against computer AI (w ~ I want to be" << endl <<
-      "                           the white player and AI will be black; b ~ vice versa)" << endl <<
+      "                           the white player and AI will be black;" << endl <<
+      "                           b ~ vice versa)" << endl <<
       "  l <file> [w|b]        load & play game from file; w ~ white, b ~ black" << endl <<
       "                          (color choice is mandatory for a network game)" << endl <<
       "  r <file>              replay game from file" << endl <<
-      "  s x|i [<file>]        save game to file (x ~ in XML syntax, i ~ in ICP syntax)" << endl <<
+      "  s x|i [<file>]        save game to file (x ~ in XML syntax" << endl <<
+      "                                           i ~ in ICP syntax)" << endl <<
       "  m c3 b4               droughtsmen/king move" << endl <<
       "  pm c3                 show possible moves" << endl <<
       "  hm                    help with move (using AI)" << endl <<
-      "  <CR>                  refresh (needed e.g. for seeing new connection requests)" << endl <<
+      "  <CR>                  refresh (needed e.g. for seeing the new network" << endl <<
+      "                          connection requests)" << endl <<
       "REPLAY COMMANDS" << endl <<
       "  bw [<N steps>]        backwards (by default 1 step)" << endl <<
       "  fw [<N steps>]        forwards (by default 1 step)" << endl <<
       "  p                     pause/play" << endl <<
-      "  d [<delay>]           set delay in ms (if no number given, set to default)" << endl <<
+      "  d [<delay>]           set delay in ms (if no number given, set to " <<
+        QString::number(g->DEFAULT_TIMEOUT) << ")" << endl <<
       "  st                    stop running timed replay (if any)" << endl;
   }
   else if (cmd_l.at(0) == "q") {
@@ -234,7 +240,7 @@ void App::refresh(void) {
       }
       else {
         qterr << "ERR: Invalid player color: " << cmd_l.at(3) << endl;
-        return;
+        RETURN_AND_CLEAR;
       }
 
       QHostAddress addr;
@@ -267,7 +273,7 @@ void App::refresh(void) {
       }
       else {
         qterr << "ERR: Invalid player color: " << cmd_l.at(2) << endl;
-        return;
+        RETURN_AND_CLEAR;
       }
     }
 
@@ -279,12 +285,6 @@ void App::refresh(void) {
   else if (cmd_l.at(0) == "r") {
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1), false))
-        qterr << g->getError() << endl;
-    }
-  }
-  else if (cmd_l.at(0) == "rt") {
-    if (cmd_l.size() == 2) {
-      if (! g->gameFromFile(cmd_l.at(1), true))
         qterr << g->getError() << endl;
     }
   }
@@ -300,7 +300,7 @@ void App::refresh(void) {
       }
       else {
         qterr << "ERR: Unknown file type specified: " << cmd_l.at(1) << endl;
-        return;
+        RETURN_AND_CLEAR;
       }
 
       QString fpath;
@@ -316,7 +316,7 @@ void App::refresh(void) {
       }
       else {
         qterr << "ERR: No file to save to." << endl;
-        return;
+        RETURN_AND_CLEAR;
       }
 
       QFile f(fpath);
@@ -377,11 +377,11 @@ void App::refresh(void) {
 
       if (! ok) {
         qterr << "ERR: Unsigned integer expected." << endl;
-        return;
+        RETURN_AND_CLEAR;
       }
     }
 
-    g->replayMove(steps, true);
+    g->replayMove(steps, false);
   }
   else if (cmd_l.at(0) == "fw") {
     int steps = 1;
@@ -392,11 +392,11 @@ void App::refresh(void) {
 
       if (! ok) {
         qterr << "ERR: Unsigned integer expected." << endl;
-        return;
+        RETURN_AND_CLEAR;
       }
     }
 
-    g->replayMove(steps, false);
+    g->replayMove(steps, true);
   }
   else if (cmd_l.at(0) == "p") {
     g->replayMoveToggle();
@@ -410,7 +410,7 @@ void App::refresh(void) {
 
       if (! ok) {
         qterr << "ERR: Unsigned integer expected." << endl;
-        return;
+        RETURN_AND_CLEAR;
       }
     }
 

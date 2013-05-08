@@ -99,7 +99,7 @@ class Game;
 
 class Player {
   private:
-    Game *par;
+    const Game &par;
     int kicked;
   public:
     typedef enum {
@@ -111,7 +111,7 @@ class Player {
     QString name;
     bool local;
 
-    Player(Game *);
+    Player(const Game &);
     bool incKicked(void);
     bool decKicked(void);
     int getKicked(void);
