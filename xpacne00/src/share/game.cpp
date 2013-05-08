@@ -685,9 +685,10 @@ bool Game::gameRemote(QHostAddress addr, int port, Player::color_t color) {
  * @return true if OK
  */
 //TODO OK
-bool Game::gameRemote(QTcpSocket *socket) {
+bool Game::gameRemote(QTcpSocket *_sock) {
   if (isRunning()) return false;
 
+  socket = _sock;
   connect(socket, SIGNAL(readyRead()), this, SLOT(gotNewData()));
   connect(socket, SIGNAL(disconnected()), this, SLOT(gotDisconnected()));
   connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
@@ -915,8 +916,8 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     /** am I allowed to move this men? */
     if (! ((player_white->local && white_is_playing) ||
           (player_black->local && black_is_playing)) ) {
-      /** do nothing and be silent */
-      return ERR_OK;
+      err_queue.append("ERR: You can move only with your men/king!.");
+      return ERR_WHITE_MUST_START;
     }
   }
 
@@ -1050,11 +1051,19 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     board[dsty][dstx] = (white_is_playing) ? MEN_WHITE_KING : MEN_BLACK_KING;
   else
     board[dsty][dstx] = board[srcy][srcx];
+
   board[srcy][srcx] = MEN_NONE;
-  //FIXME add support for network game!
   appendMoveToXml(srcx, srcy, dstx, dsty,kickedx, kickedy, kicked, became_a_king);
 
-  //FIXME what about network game?
+  if (! isLocal()) {
+    if (socket->write(QString(TOK::MOVE +
+            QString::number(srcx) + " " +
+            QString::number(srcy) + " " +
+            QString::number(dstx) + " " +
+            QString::number(dsty)).toLocal8Bit()) == -1)
+      err_queue.append(socket->errorString());
+  }
+
   if (game_state != STATE_END) {
     if (white_is_playing)
       game_state = STATE_WHITE;
@@ -1556,6 +1565,7 @@ void Game::gotConnected(void) {
 }
 
 void Game::gotNewData(void) {
+  Q_ASSERT(socket != NULL);//FIXME
   QString s(socket->readAll());
   NetCmdParser parser(s);
 
@@ -1684,7 +1694,7 @@ void Game::dispatchUserResponseInvite(bool yes) {
 
 /** user wants to exit */
 void Game::dispatchUserResponseExit(void) {
-  Q_ASSERT(socket != NULL);
+  if (isLocal()) return;
 
   if (socket->write(QString(TOK::EXIT).toLocal8Bit()) == -1)
     err_queue.append(socket->errorString());

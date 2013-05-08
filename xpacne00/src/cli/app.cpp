@@ -8,11 +8,16 @@
 //FIXME check all methods called from this file if the have at
 //  the begining isRunning() or isReplaying() check
 
+#define RETURN_AND_CLEAR cmd_l.clear(); return;
+
 void App::prepareNewGame(void) {
   if (g != NULL) delete g;
 
   g = new Game(this->server);
   connect(g, SIGNAL(refresh(void)), this, SLOT(schedule_refresh(void)));
+  connect(g, SIGNAL(gotInvite(Player::color_t, QString)),
+      this, SLOT(gotInviteSlot(Player::color_t, QString)));
+  connect(g, SIGNAL(gotExit(void)), this, SLOT(gotExitSlot(void)));
 }
 
 App::App(QCoreApplication *_parent) :
@@ -58,8 +63,6 @@ App::~App(void) {
   if (server   != NULL) delete server;
   if (notifier != NULL) delete notifier;
 }
-
-#define RETURN_AND_CLEAR cmd_l.clear(); return;
 
 void App::refresh(void) {
   /** header and content are not needed for user answers */
@@ -146,28 +149,28 @@ void App::refresh(void) {
     qtout << endl;
   }
 
-  /** in CLI we can handle only 1 game at a time */
-  if (! g->isRunning() && ! new_conn_handled) {
-    new_conn_handled = true;
-
-    for (;;) {
-      qtout << "Connection request from " <<
-        g->getRemoteAddr().toString() << ":" <<
-        QString::number(g->getRemotePort()) << ", accept? [y/n] " << flush;
-
-      /** read one line of user input */
-      line = qtin.readLine();
-      if (line == "y") {
-        schedule_refresh();
-        RETURN_AND_CLEAR;
-      }
-      else if (line == "n") {
-        prepareNewGame();
-        schedule_refresh();
-        RETURN_AND_CLEAR;
-      }
-    }
-  }
+//  /** in CLI we can handle only 1 game at a time */
+//  if (! g->isRunning() && ! new_conn_handled) {
+//    new_conn_handled = true;
+//
+//    for (;;) {
+//      qtout << "Connection request from " <<
+//        g->getRemoteAddr().toString() << ":" <<
+//        QString::number(g->getRemotePort()) << ", accept? [y/n] " << flush;
+//
+//      /** read one line of user input */
+//      line = qtin.readLine();
+//      if (line == "y") {
+//        schedule_refresh();
+//        RETURN_AND_CLEAR;
+//      }
+//      else if (line == "n") {
+//        prepareNewGame();
+//        schedule_refresh();
+//        RETURN_AND_CLEAR;
+//      }
+//    }
+//  }
 
   qtout << "for help type h" << endl << ">>> " << flush;
 
@@ -206,6 +209,9 @@ void App::refresh(void) {
       "  st                    stop running timed replay (if any)" << endl;
   }
   else if (cmd_l.at(0) == "q") {
+    /** not necessary to call from CLI, but from GUI */
+    //g->dispatchUserResponseExit();
+
     prepareNewGame();
     schedule_refresh();
   }
@@ -449,12 +455,40 @@ void App::handleInput(void) {
 void App::gotConnection() {
   qDebug("gotConnection()"); //FIXME remove this debug
 
-  /** user did not handled the previous connection */
-  if (! new_conn_handled) return;
+//  /** user did not handled the previous connection */
+//  if (! new_conn_handled) return;
 
   if (server->hasPendingConnections())
     g->gameRemote(server->nextPendingConnection());
 
-  /** the user has not handled it yet */
-  new_conn_handled = false;
+//  /** the user has not handled it yet */
+//  new_conn_handled = false;
 }
+
+void App::gotInviteSlot(Player::color_t c, QString remote_player_alias) {
+  for (;;) {
+    qtout << "Player " << remote_player_alias <<
+    ((c == Player::COLOR_WHITE) ? " (white)" : " (black)") <<
+    " from " << g->getRemoteAddr().toString() << ":" <<
+    QString::number(g->getRemotePort()) << " requests new game, accept? [y/n] " << flush;
+
+    /** read one line of user input */
+    line = qtin.readLine();
+    if (line == "y") {
+      g->dispatchUserResponseInvite(true);
+      schedule_refresh();
+      RETURN_AND_CLEAR;
+    }
+    else if (line == "n") {
+      g->dispatchUserResponseInvite(false);
+      prepareNewGame();
+      schedule_refresh();
+      RETURN_AND_CLEAR;
+    }
+  }
+}
+
+void App::gotExitSlot(void) {
+  qterr << "WARN: Opponent quit the game." << endl;
+}
+

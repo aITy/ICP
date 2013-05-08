@@ -71,6 +71,8 @@ public Q_SLOTS:
   void handleInput(void);
   void gotConnection(void);
   void schedule_refresh(void);
+  void gotInviteSlot(Player::color_t, QString);
+  void gotExitSlot(void);
 
 Q_SIGNALS:
   // emit blocks unless queued connections are used
