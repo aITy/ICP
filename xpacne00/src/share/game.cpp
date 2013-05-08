@@ -926,27 +926,28 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     return ERR_WHITE_MUST_START;
   }
 
-  /** return if the previous move wasn't complete */
-  if (! loading && last_move_dst.first != -1 &&
-      /** make sure, the last move has kicked some men/king out */
-      doc->documentElement().firstChildElement(XML::STR_MOVES).
+  /** current src is different from the last_move_dst */
+  if (int(srcx) != last_move_dst.first || int(srcy) != last_move_dst.second) {
+    /** return if the previous move wasn't complete */
+    if (! loading && last_move_dst.first != -1 &&
+        /** make sure, the last move has kicked some men/king out */
+        doc->documentElement().firstChildElement(XML::STR_MOVES).
         lastChild().attributes().namedItem(XML::STR_KICKED).
         nodeValue() != XML::STR_NONE &&
-      (int(srcx) != last_move_dst.first ||
-       int(srcy) != last_move_dst.second) &&
-      showPossibleMoves(last_move_dst.first, last_move_dst.second, false)) {
+        showPossibleMoves(last_move_dst.first, last_move_dst.second, false)) {
+      hidePossibleMoves(false);
+      err_queue.append("ERR: Previous move is not complete.");
+      return ERR_PREV_MOVE_NOT_FINISHED;
+    }
+
     hidePossibleMoves(false);
-    err_queue.append("ERR: Previous move is not complete.");
-    return ERR_PREV_MOVE_NOT_FINISHED;
-  }
 
-  hidePossibleMoves(false);
-
-  /** force to alternate moves */
-  if ((white_is_playing && game_state == STATE_WHITE) ||
-      (black_is_playing && game_state == STATE_BLACK)) {
-    err_queue.append("ERR: Players must alternate.");
-    return ERR_INVALID_MOVE;
+    /** force to alternate moves */
+    if ((white_is_playing && game_state == STATE_WHITE) ||
+        (black_is_playing && game_state == STATE_BLACK)) {
+      err_queue.append("ERR: Players must alternate.");
+      return ERR_INVALID_MOVE;
+    }
   }
 
   if (game_state != STATE_CAN_START) {
