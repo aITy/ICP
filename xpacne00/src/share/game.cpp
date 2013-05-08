@@ -848,18 +848,19 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     return ERR_INVALID_MOVE;
   }
 
-  /** in network game color matters */
-  if (! isLocal()) {
+  /** in network_game and local_game_with_AI color matters */
+  if (! isLocal() || game_ai != Player::COLOR_DONT_KNOW) {
     /** am I allowed to move this men? */
     if (! ((player_white->local && white_is_playing) ||
-          (player_black->local && black_is_playing)) ) {
+           (player_black->local && black_is_playing) ||
+           (white_is_playing && game_ai == Player::COLOR_BLACK) ||
+           (black_is_playing && game_ai == Player::COLOR_WHITE)
+           ) ) {
       err_queue.append("ERR: You can move only with your men/king!.");
       return ERR_WHITE_MUST_START;
     }
   }
 
-  //FIXME
-  //if ((loading || game_state == STATE_CAN_START) && board[srcy][srcx] != MEN_WHITE) {
   if (game_state == STATE_CAN_START && board[srcy][srcx] != MEN_WHITE) {
     err_queue.append("ERR: White men must start the game.");
     return ERR_WHITE_MUST_START;
@@ -880,13 +881,6 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     }
 
     hidePossibleMoves(false);
-
-    /** force to alternate moves */
-    if ((white_is_playing && game_state == STATE_WHITE) ||
-        (black_is_playing && game_state == STATE_BLACK)) {
-      err_queue.append("ERR: Players must alternate.");
-      return ERR_INVALID_MOVE;
-    }
   }
 
   if (game_state != STATE_CAN_START) {
@@ -914,20 +908,6 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 
     hidePossibleMoves(false);
   }
-
-  //FIXME
-//  if (game_state == STATE_WHITE && game_ai == Player::COLOR_BLACK) {
-//    adviceMove();
-//    if (can make another move)
-//      call move();
-//    else
-//      game_state = state_white
-//
-//        Q_EMIT refresh();
-//    return ERR_OK;
-//  }
-//  else if (game_state == STATE_BLACK && game_ai == Player::COLOR_WHITE) {
-//  }
 
   /** check presence in dst */
   if (board[dsty][dstx] != MEN_NONE) {
@@ -983,6 +963,15 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
       board[kickedy][kickedx] = MEN_NONE;
     }
   }
+  else {
+    /** force to alternate moves */
+    if ((white_is_playing && game_state == STATE_WHITE) ||
+        (black_is_playing && game_state == STATE_BLACK)) {
+      hidePossibleMoves(false);
+      err_queue.append("ERR: Players must alternate.");
+      return ERR_INVALID_MOVE;
+    }
+  }
 
   hidePossibleMoves(false);
 
@@ -1019,6 +1008,66 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     last_move_dst.first  = dstx;
     last_move_dst.second = dsty;
   }
+
+//  /** AI is enabled */
+//  if (game_ai != Player::COLOR_DONT_KNOW &&
+//      (
+//       /** current player is not AI */
+//       ((white_is_playing && game_ai == Player::COLOR_BLACK) ||
+//        (black_is_playing && game_ai == Player::COLOR_WHITE)) &&
+//       /** current player can not make another move */
+//       doc->documentElement().firstChildElement(XML::STR_MOVES).
+//       lastChild().attributes().namedItem(XML::STR_KICKED).
+//       nodeValue() == XML::STR_NONE ||
+//       ! showPossibleMoves(last_move_dst.first, last_move_dst.second, false)
+//      ) ||
+//      (
+//       /** current player is AI */
+//       ((white_is_playing && game_ai == Player::COLOR_WHITE) ||
+//        (black_is_playing && game_ai == Player::COLOR_BLACK)) &&
+//       /** current player not make another move */
+//       doc->documentElement().firstChildElement(XML::STR_MOVES).
+//       lastChild().attributes().namedItem(XML::STR_KICKED).
+//       nodeValue() != XML::STR_NONE &&
+//       showPossibleMoves(last_move_dst.first, last_move_dst.second, false)
+//      ) ) {
+//      (
+//      (current_player != AI && current_player_can_not_make_another_move)
+//      ||
+//      (current_player == AI && current_player_can_make_another_move)
+//      )
+//      {
+//    // generate move coordinates
+//    move(..., )
+//
+//    /** return if the previous move wasn't complete */
+//    if (! loading && last_move_dst.first != -1 &&
+//        /** make sure, the last move has kicked some men/king out */
+//        doc->documentElement().firstChildElement(XML::STR_MOVES).
+//        lastChild().attributes().namedItem(XML::STR_KICKED).
+//        nodeValue() != XML::STR_NONE &&
+//        showPossibleMoves(last_move_dst.first, last_move_dst.second, false)) {
+//      hidePossibleMoves(false);
+//      err_queue.append("ERR: Previous move is not complete.");
+//      return ERR_PREV_MOVE_NOT_FINISHED;
+//    }
+//
+//    hidePossibleMoves(false);
+//
+//  //FIXME
+//  //  if (game_state == STATE_WHITE && game_ai == Player::COLOR_BLACK) {
+//  //    adviceMove();
+//  //    if (can make another move)
+//  //      call move();
+//  //    else
+//  //      game_state = state_white
+//  //
+//  //        Q_EMIT refresh();
+//  //    return ERR_OK;
+//  //  }
+//  //  else if (game_state == STATE_BLACK && game_ai == Player::COLOR_WHITE) {
+//  //  }
+//  }
 
   if (! loading) Q_EMIT refresh();
 
