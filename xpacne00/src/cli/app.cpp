@@ -11,7 +11,7 @@
 void App::prepareNewGame(void) {
   if (g != NULL) delete g;
 
-  g = new Game();
+  g = new Game(this->server);
   connect(g, SIGNAL(refresh(void)), this, SLOT(schedule_refresh(void)));
 }
 

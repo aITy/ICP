@@ -19,8 +19,7 @@
   PRINT_STATE(STATE_GAME_RECEIVE        ); \
   PRINT_STATE(STATE_MOVE_DISPATCH       ); \
   PRINT_STATE(STATE_MOVE_RECEIVE        ); \
-  PRINT_STATE(STATE_EXIT_DISPATCH       ); \
-  PRINT_STATE(STATE_EXIT_RECEIVE        ); \
+  PRINT_STATE(STATE_NET_RUNNING         ); \
   PRINT_STATE(STATE_REPLAY_STEP         ); \
   PRINT_STATE(STATE_REPLAY_TIMED        ); \
   PRINT_STATE(STATE_REPLAY_STOP         ); \
@@ -602,12 +601,12 @@ void Game::prepareNewTimer(void) {
 }
 
 //TODO OK
-Game::Game(void) :
+Game::Game(QTcpServer *_server) :
   DEFAULT_TIMEOUT(600),
   board(8, QVector<men_t>(8, MEN_NONE)),
   socket(NULL),
+  server(_server),
   game_state(STATE_PRE_INIT),
-  remote_server_port(-1),
   last_move_dst(-1, -1),
   possible_move_present(-1, -1),
   current_move_index(-1),
@@ -874,6 +873,11 @@ bool Game::isLocal(void) {
 
 /**
  * men/king move (used both by user and internally => the argument "loading")
+ * @param
+ * @param
+ * @param
+ * @param
+ * @param true if used internally for loading from ICP syntax
  */
 Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
     unsigned int dstx, unsigned int dsty, bool loading) {
@@ -1409,7 +1413,7 @@ void Game::syncXml(void) {
       (socket == NULL) ? "" : socket->peerAddress().toString());
   /** /draughts/game[@port] */
   e.setAttribute(XML::STR_PORT,
-      (socket == NULL) ? "" : remote_server_port);
+      (socket == NULL) ? "" : QString::number(remote_server_port));
 
   e = doc->documentElement().firstChildElement(XML::STR_PLAYERS);
   /** /draughts/players/black */
@@ -1538,43 +1542,113 @@ void Game::setFilePath(QString fpath) {
 //TODO OK
 void Game::gotConnected(void) {
   /** initiate communication */
-  //FIXME toLocal8Bit().constData()
-  socket->write(QString(
+  if (socket->write(QString(
         TOK::INVITE +
-        QString::number(qobject_cast<QTcpServer *>(socket->parent())->serverPort()) +
-        " " + ((player_white->local) ? player_white->name : player_black->name)
-        ).toLocal8Bit());
+        QString((player_white->local) ? TOK::WHITE : TOK::BLACK) +
+        QString::number(server->serverPort()) + " " +
+        ((player_white->local) ? player_white->name : player_black->name)
+        ).toLocal8Bit()) == -1) {
+    err_queue.append(socket->errorString());
+  }
+
   socket->flush();
   game_state = STATE_INVITE_DISPATCH;
 }
 
 void Game::gotNewData(void) {
-  qDebug("UNIMPLEMENTED: gotNewData()");//FIXME
-  //// get the socket from the sender object
-  //QTcpSocket* soc = qobject_cast<QTcpSocket*>(this->sender());
-  //QString s(socket->readAll());
-  //NetCmdParser parser(s);
+  QString s(socket->readAll());
+  NetCmdParser parser(s);
 
-  //for (;;) {
-  //  switch (game_state) {
-  //  }
+  switch (parser.getNextCmd()) {
+    case NetCmdParser::INVITE:
+      if (game_state == STATE_WAIT_FOR_CONNECTION) {
+        if (parser.getNextCmd() == NetCmdParser::BLACK) {
+          player_black->local = false;
+          player_white->local = true;
+        }
+        else {
+          player_black->local = true;
+          player_white->local = false;
+        }
 
-  //  switch (parser.getNextCmd()) {
-  //    case NetCmdParser::TOK_:
-  //      break;
-  //  }
-  //}
+        /** keep empty parts */
+        QStringList tmp = parser.getRest().split(" ");
+        remote_server_port = tmp.at(0).toInt();
+        tmp.removeFirst();
+        game_state = STATE_INVITE_DISPATCH;
 
-  //soc->write(QByteArray);
-  //soc->flush();
-  //soc->errorString();
+        if (player_black->local)
+          player_white->name = tmp.join(" ");
+        else
+          player_black->name = tmp.join(" ");
+
+        /** ask user for his alias */
+        Q_EMIT gotInvite(Player::COLOR_BLACK, tmp.join(" "));
+      }
+      break;
+
+    case NetCmdParser::INVITE_ACCEPT:
+      if (game_state == STATE_INVITE_DISPATCH) {
+        if (socket->write(QString(
+                TOK::GAME +
+                ((remote_will_load) ? (TOK::LOAD + getXmlStr()) : TOK::NEW)
+                ).toLocal8Bit()) == -1) {
+          err_queue.append(socket->errorString());
+        }
+
+        game_state = STATE_GAME_DISPATCH;
+      }
+      break;
+
+    /** we can start playing */
+    case NetCmdParser::GAME:
+      if (game_state == STATE_INVITE_RECEIVE_ANSWERED) {
+        if (parser.getNextCmd() == NetCmdParser::NEW) {
+          initXml();
+          game_state = STATE_CAN_START;
+        }
+        /** load */
+        else {
+          if (! doc->setContent(parser.getRest())) {
+            qDebug("setContent() from network failed");
+            game_state = STATE_END;
+            return;
+          }
+
+          game_state = STATE_CAN_START;
+
+          /** interpret all available moves */
+          while (moveFromXml(true));
+        }
+
+        Q_EMIT refresh();
+      }
+
+      break;
+    case NetCmdParser::MOVE:
+      if (game_state == STATE_RUNNING) {
+        QStringList coord = parser.getRest().split(" ", QString::SkipEmptyParts);
+        move(
+            coord.at(0).toUInt(),
+            coord.at(1).toUInt(),
+            coord.at(2).toUInt(),
+            coord.at(3).toUInt(),
+            false);
+      }
+      break;
+    case NetCmdParser::INVITE_REJECT:
+    case NetCmdParser::EXIT:
+      game_state = STATE_END;
+      socket->disconnectFromHost();
+      Q_EMIT gotExit();
+      break;
+    default:
+      break;
+  }
 }
 
 void Game::gotDisconnected(void) {
-  qDebug("UNIMPLEMENTED: gotDisconnected()");//FIXME
-  //QTcpSocket* socket = qobject_cast<QTcpSocket*>( this->sender() );
-  //if (this->sender()->parent != this)
-
+  //FIXME can we call deleteLater() on our socket?
   socket->deleteLater();
   game_state = STATE_END;
   Q_EMIT refresh();
@@ -1583,6 +1657,38 @@ void Game::gotDisconnected(void) {
 void Game::gotTimeout(void) {
   /** move by 1 forward */
   if (! replayMove(1, true))
-    disconnect(replay_timer, SIGNAL(newTimeout()), this, SLOT(gotTimeout()));
+    replay_timer->stop();
   Q_EMIT refresh();
+}
+
+/** called after the user chooses do (not) accepts the invite */
+void Game::dispatchUserResponseInvite(bool yes) {
+  Q_ASSERT(socket != NULL);
+
+  if (yes) {
+    if (socket->write(QString(TOK::INVITE_ACCEPT +
+            ((player_white->local) ? player_white->name : player_black->name))
+          .toLocal8Bit()) == -1)
+      err_queue.append(socket->errorString());
+
+    game_state = STATE_INVITE_RECEIVE_ANSWERED;
+  }
+  else {
+    if (socket->write(QString(TOK::INVITE_REJECT).toLocal8Bit()) == -1)
+      err_queue.append(socket->errorString());
+
+    game_state = STATE_END;
+    socket->disconnectFromHost();
+  }
+}
+
+/** user wants to exit */
+void Game::dispatchUserResponseExit(void) {
+  Q_ASSERT(socket != NULL);
+
+  if (socket->write(QString(TOK::EXIT).toLocal8Bit()) == -1)
+    err_queue.append(socket->errorString());
+
+  socket->disconnectFromHost();
+  game_state = STATE_END;
 }

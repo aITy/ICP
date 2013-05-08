@@ -27,14 +27,11 @@ partie mohou byt hrany/prehravany soucasne (treba v tabech)!
   tzn. asi samostatny objekt "game"
 
 protokol
-  A: INVITE port_of_server nick1_optionally_with_spaces
+  A: INVITE BLACK|WHITE port_of_server nick1_optionally_with_spaces
   B: INVITE_ACCEPT nick2
      INVITE_REJECT
-  A: GAME black|white new
-     GAME black|white load xml_string_s_loadovanou_hrou
-     # tak dlouho, dokud nektery neodpovi GAME_ACCEPT/GAME_REJECT/EXIT
-  B: GAME_ACCEPT
-     GAME_REJECT
+  A: GAME NEW
+     GAME LOAD xml_string_s_loadovanou_hrou
   A/B: MOVE XY_old XY_new
   A/B: EXIT
 

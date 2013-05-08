@@ -60,7 +60,7 @@ namespace TOK {
   CONST_STR( GAME         , "GAME "          );
   CONST_STR( WHITE        , "WHITE "         );
   CONST_STR( BLACK        , "BLACK "         );
-  CONST_STR( NEW          , "NEW "           );
+  CONST_STR( NEW          , "NEW"            );
   CONST_STR( LOAD         , "LOAD "          );
   CONST_STR( GAME_ACCEPT  , "GAME_ACCEPT"    );
   CONST_STR( GAME_REJECT  , "GAME_REJECT"    );
@@ -75,7 +75,7 @@ class NetCmdParser {
       INVITE       ,
       INVITE_ACCEPT,
       INVITE_REJECT,
-      //GAME         ,  //FIXME
+      GAME         ,
       WHITE        ,
       BLACK        ,
       NEW          ,
@@ -181,15 +181,17 @@ class Game : public QObject {
       STATE_RUNNING,
       STATE_WHITE,
       STATE_BLACK,
+
       STATE_WAIT_FOR_CONNECTION,
-      STATE_INVITE_DISPATCH,  /**< question */
-      STATE_INVITE_RECEIVE,  /**< answer */
+      STATE_INVITE_DISPATCH,
+      STATE_INVITE_RECEIVE,
+      STATE_INVITE_RECEIVE_ANSWERED,
       STATE_GAME_DISPATCH,
       STATE_GAME_RECEIVE,
       STATE_MOVE_DISPATCH,
       STATE_MOVE_RECEIVE,
-      STATE_EXIT_DISPATCH,  /**< FIXME redundant??? */
-      STATE_EXIT_RECEIVE,
+      STATE_NET_RUNNING,
+
       STATE_REPLAY_STEP,  /**< accepting user steps */
       STATE_REPLAY_TIMED,
       STATE_REPLAY_STOP,
@@ -204,7 +206,7 @@ class Game : public QObject {
      */
     QVector< QVector<men_t> > board;
 
-    Game(void);
+    Game(QTcpServer *);  /**< port number of the running QTcpServer */
     ~Game(void);
     bool gameRemote(QHostAddress, int, Player::color_t);  /**< locally initiated */
     bool gameRemote(QTcpSocket *);  /**< remotely initiated */
@@ -248,17 +250,13 @@ class Game : public QObject {
     /** the whole game XML tree including history */
     QDomDocument *doc;
     QTcpSocket *socket;
+    QTcpServer *server;  /** only to read the port server is listening on */
     Player *player_white;
     Player *player_black;
     QString filepath;
     /** queue for errors which can not be output immediately */
     QList<QString> err_queue;
     state_t game_state;
-    /** needed for game loading from XML, because the connection port
-       is temporary */
-    QString remote_server_port;
-    /** we are loading game from file and the remote side will load our game */
-    bool remote_will_load;
 
     /** used for checking of possible moves before a user a move is processed */
     QPair<int, int> last_move_dst;
@@ -271,6 +269,12 @@ class Game : public QObject {
     QTimerImproved *replay_timer;
     int replay_delay;
     int replay_stop_index;
+
+    /** needed for game loading from XML, because the connection port
+       is temporary */
+    int remote_server_port;
+    /** we are loading game from file and the remote side will load our game */
+    bool remote_will_load;
 
     /** create a new document template if none is existing yet */
     void initXml(void);
@@ -292,9 +296,15 @@ class Game : public QObject {
     void gotDisconnected(void);  /**< disconnect, error */
     void gotTimeout(void);
 
+    void dispatchUserResponseInvite(bool);
+    void dispatchUserResponseExit(void);
+
   Q_SIGNALS:
     /** emitted whenever a board has changed (thus redraw is needed) */
     void refresh(void);
+    /** let the user accept the new connection */
+    void gotInvite(Player::color_t, QString);
+    void gotExit(void);
 };
 
 #endif
