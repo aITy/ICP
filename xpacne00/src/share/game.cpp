@@ -1031,42 +1031,24 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 //       nodeValue() != XML::STR_NONE &&
 //       showPossibleMoves(last_move_dst.first, last_move_dst.second, false)
 //      ) ) {
-//      (
-//      (current_player != AI && current_player_can_not_make_another_move)
-//      ||
-//      (current_player == AI && current_player_can_make_another_move)
-//      )
-//      {
 //    // generate move coordinates
 //    move(..., )
 //
-//    /** return if the previous move wasn't complete */
-//    if (! loading && last_move_dst.first != -1 &&
-//        /** make sure, the last move has kicked some men/king out */
-//        doc->documentElement().firstChildElement(XML::STR_MOVES).
-//        lastChild().attributes().namedItem(XML::STR_KICKED).
-//        nodeValue() != XML::STR_NONE &&
-//        showPossibleMoves(last_move_dst.first, last_move_dst.second, false)) {
-//      hidePossibleMoves(false);
-//      err_queue.append("ERR: Previous move is not complete.");
-//      return ERR_PREV_MOVE_NOT_FINISHED;
-//    }
-//
 //    hidePossibleMoves(false);
 //
-//  //FIXME
-//  //  if (game_state == STATE_WHITE && game_ai == Player::COLOR_BLACK) {
-//  //    adviceMove();
-//  //    if (can make another move)
-//  //      call move();
-//  //    else
-//  //      game_state = state_white
-//  //
-//  //        Q_EMIT refresh();
-//  //    return ERR_OK;
-//  //  }
-//  //  else if (game_state == STATE_BLACK && game_ai == Player::COLOR_WHITE) {
-//  //  }
+//    //FIXME
+//    //  if (game_state == STATE_WHITE && game_ai == Player::COLOR_BLACK) {
+//    //    adviceMove();
+//    //    if (can make another move)
+//    //      call move();
+//    //    else
+//    //      game_state = state_white
+//    //
+//    //        Q_EMIT refresh();
+//    //    return ERR_OK;
+//    //  }
+//    //  else if (game_state == STATE_BLACK && game_ai == Player::COLOR_WHITE) {
+//    //  }
 //  }
 
   if (! loading) Q_EMIT refresh();
