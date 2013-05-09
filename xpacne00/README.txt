@@ -1,6 +1,8 @@
 Jiří Navrátil (xnavra360
 Jan Pacner (xpacne00)
 
+Makefile vyuziva prikaz "qmake", a je tedy nutne nastavit spravne $PATH pred spustenim "make"
+
 CLI
   spustit pomoci
     make run-cli
