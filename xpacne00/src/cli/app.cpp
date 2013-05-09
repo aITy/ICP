@@ -487,4 +487,3 @@ void App::gotInviteSlot(Player::color_t c, QString remote_player_alias) {
 void App::gotExitSlot(void) {
   qterr << "WARN: Opponent quit the game." << endl;
 }
-

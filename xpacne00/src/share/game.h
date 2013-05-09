@@ -216,7 +216,7 @@ class Game : public QObject {
     bool isLocal(void);
     state_t getState(void);//FIXME not needed?
 
-    err_t move(unsigned int, unsigned int, unsigned int, unsigned int, bool loading = false);
+    err_t move(unsigned int, unsigned int, unsigned int, unsigned int, bool do_emit = true);
     bool showPossibleMoves(unsigned int, unsigned int, bool do_emit = true);
     void hidePossibleMoves(bool do_emit = true);
     void hidePossibleMoves(int, int, bool do_emit = true);

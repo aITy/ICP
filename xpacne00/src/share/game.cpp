@@ -5,22 +5,6 @@
 
 #include "game.h"
 
-#define PRINT_STATE(st) if (game_state == (st)) qDebug(#st);
-#define PRINT_CUR_STATE \
-  PRINT_STATE(STATE_PRE_INIT            ); \
-  PRINT_STATE(STATE_CAN_START           ); \
-  PRINT_STATE(STATE_WHITE               ); \
-  PRINT_STATE(STATE_BLACK               ); \
-  PRINT_STATE(STATE_WAIT_FOR_CONNECTION ); \
-  PRINT_STATE(STATE_WAIT_FOR_REMOTE     ); \
-  PRINT_STATE(STATE_INVITE_DISPATCH     ); \
-  PRINT_STATE(STATE_INVITE_RECEIVED     ); \
-  PRINT_STATE(STATE_INVITE_ANSWERED     ); \
-  PRINT_STATE(STATE_REPLAY_STEP         ); \
-  PRINT_STATE(STATE_REPLAY_TIMED        ); \
-  PRINT_STATE(STATE_REPLAY_STOP         ); \
-  PRINT_STATE(STATE_END                 );
-
 void QTimerImproved::resendTimeout(void) {
   if (singleShotScheduledInternally) {
     singleShotScheduledInternally = false;
@@ -447,7 +431,7 @@ bool Game::loadFromIcpSyntax(QString s) {
         IcpSyntaxParser::pair_uint_t pair2 =
           IcpSyntaxParser::strCoordToUInt(tmp, NULL);
 
-        if (move(pair1.first, pair1.second, pair2.first, pair2.second, true))
+        if (move(pair1.first, pair1.second, pair2.first, pair2.second, false))
           return false;
 
         pair1 = pair2;
@@ -672,11 +656,11 @@ bool Game::gameLocal(bool ai_is_black) {
   }
   else {
     game_ai = Player::COLOR_WHITE;
-    game_state = STATE_BLACK;
     adviceMove(false);
+    QPair<int, int> _src = possible_move_src;
+    QPair<int, int> _dst = possible_move_dst;
     hidePossibleMoves(false);
-    move(possible_move_src.first, possible_move_src.second,
-        possible_move_dst.first, possible_move_dst.second);
+    move(_src.first, _src.second, _dst.first, _dst.second, false);
   }
 
   Q_EMIT refresh();
@@ -828,12 +812,12 @@ bool Game::isLocal(void) {
  * @param true if used internally for loading from ICP syntax
  */
 Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
-    unsigned int dstx, unsigned int dsty, bool loading) {
+    unsigned int dstx, unsigned int dsty, bool do_emit) {
   bool white_is_playing;
   bool black_is_playing;
 
   /** do nothing and be silent */
-  if (! loading && ! isRunning() && isInNetworkMeantime()) return ERR_OK;
+  if (! isRunning() && isInNetworkMeantime()) return ERR_OK;
 
   /** check boundaries */
   if (! isInBoundaries(srcx, srcy) || ! isInBoundaries(dstx, dsty)) {
@@ -879,7 +863,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
   /** current src is different from the last_move_dst */
   if (int(srcx) != last_move_dst.first || int(srcy) != last_move_dst.second) {
     /** return if the previous move wasn't complete */
-    if (! loading && last_move_dst.first != -1 &&
+    if (last_move_dst.first != -1 &&
         /** make sure, the last move has kicked some men/king out */
         doc->documentElement().firstChildElement(XML::STR_MOVES).
         lastChild().attributes().namedItem(XML::STR_KICKED).
@@ -1021,7 +1005,6 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
 
   /** AI is enabled */
   if (game_ai != Player::COLOR_DONT_KNOW) {
-    qDebug("howk00");//FIXME
     if (
         (/** current player is not AI */
          ((white_is_playing && game_ai == Player::COLOR_BLACK) ||
@@ -1032,7 +1015,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
          lastChild().attributes().namedItem(XML::STR_KICKED).
          nodeValue() == XML::STR_NONE
          ||
-         /** no jump possible */
+         /** no direct jump possible */
          ! showPossibleMoves(last_move_dst.first, last_move_dst.second, false)))
         ||
         (/** current player is AI */
@@ -1044,24 +1027,21 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
          lastChild().attributes().namedItem(XML::STR_KICKED).
          nodeValue() != XML::STR_NONE
          &&
-         /** some jump possible */
+         /** some direct jump possible */
          showPossibleMoves(last_move_dst.first, last_move_dst.second, false))
         ) {
-    qDebug("howk01");//FIXME
-           adviceMove(false);
-    qDebug("howk02");//FIXME
-           hidePossibleMoves(false);
-    qDebug("howk03");//FIXME
-           move(possible_move_src.first, possible_move_src.second,
-                possible_move_dst.first, possible_move_dst.second);
-    qDebug("howk04");//FIXME
+          adviceMove(false);
+          QPair<int, int> _src = possible_move_src;
+          QPair<int, int> _dst = possible_move_dst;
+          hidePossibleMoves(false);
+          move(_src.first, _src.second, _dst.first, _dst.second, false);
         }
     else {
       hidePossibleMoves(false);
     }
   }
 
-  if (! loading) Q_EMIT refresh();
+  if (do_emit) Q_EMIT refresh();
 
   return ERR_OK;
 }
@@ -1083,7 +1063,6 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
 
   bool can_jump = false;
   possible_move_dst = QPair<int, int>(-1, -1);
-
   QPair<int, int> contra_color;
 
   if (board[y][x] == MEN_BLACK_KING || board[y][x] == MEN_BLACK)
@@ -1212,6 +1191,10 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
       // top right
       FIND_POSSIBLE_MOVE_FOR_MEN(x +1, y -1, x +2, y -2);
     }
+    else {
+      /** no change => no emit */
+      return false;
+    }
 
     /** the jump coordinates have precedence */
     if (can_jump) possible_move_dst = jump_coord;
@@ -1244,7 +1227,10 @@ void Game::hidePossibleMoves(int x, int y, bool do_emit) {
     }
   }
 
-  possible_move_dst = QPair<int, int>(-1, -1);
+  //possible_move_src = QPair<int, int>(-1, -1);
+
+  if (x < 0 || y < 0)
+    possible_move_dst = QPair<int, int>(-1, -1);
 
   if (do_emit) Q_EMIT refresh();
 }
@@ -1254,55 +1240,65 @@ void Game::adviceMove(bool do_emit) {
 
   /** look at this genius AI */
   if (game_state == STATE_CAN_START) {
-    board[3][2] = MEN_POSSIBLE_MOVE;
+    possible_move_src = QPair<int, int>(1, 2);
+    possible_move_dst = QPair<int, int>(0, 3);
+    board[3][0] = MEN_POSSIBLE_MOVE;
+
+    if (do_emit) Q_EMIT refresh();
+
     return;
   }
 
-  /** the previous move wasn't complete (jump necessary) */
-  if (last_move_dst.first != -1 &&
-      showPossibleMoves(last_move_dst.first, last_move_dst.second, false)) {
+  if (/** the previous move wasn't complete (jump necessary) */
+      (last_move_dst.first != -1 &&
+       showPossibleMoves(last_move_dst.first, last_move_dst.second, false))
+     ) {
     /** make the last found possible move the advice */
     hidePossibleMoves(possible_move_dst.first,
-                      possible_move_dst.second, false);
+        possible_move_dst.second, false);
+
+    if (do_emit) Q_EMIT refresh();
+
+    return;
   }
-  else {
-    bool possible_move_found = false;
 
-    for (int i = 0; i < board.size(); ++i) {
-      for (int j = 0; j < board[i].size(); ++j) {
-        /** is it white/black men/king? */
-        if (isBlackBox(i, j) && board[j][i] != MEN_NONE) {
-          if (game_state == STATE_WHITE) {
-            if (board[j][i] == MEN_BLACK ||
-                board[j][i] == MEN_BLACK_KING)
-              continue;
-          }
-          else {
-            if (board[j][i] == MEN_WHITE ||
-                board[j][i] == MEN_WHITE_KING)
-              continue;
-          }
+  bool possible_move_found = false;
 
-          showPossibleMoves(i, j, false);
-
-          if (possible_move_dst.first != -1) {
-            hidePossibleMoves(possible_move_dst.first,
-                              possible_move_dst.second, false);
-            possible_move_found = true;
-            possible_move_src = QPair<int, int>(j, i);
-            break;
-          }
-
-          hidePossibleMoves(false);
+  for (int i = 0; i < board.size(); ++i) {
+    for (int j = 0; j < board[i].size(); ++j) {
+      /** is it white/black men/king? */
+      if (isBlackBox(i, j) && board[j][i] != MEN_NONE) {
+        if (game_state == STATE_WHITE) {
+          /** white could not jump => we must alternate */
+          if (board[j][i] == MEN_WHITE || board[j][i] == MEN_WHITE_KING)
+            continue;
         }
-      }
+        else {
+          Q_ASSERT(game_state == STATE_BLACK);
+          /** black could not jump => we must alternate */
+          if (board[j][i] == MEN_BLACK || board[j][i] == MEN_BLACK_KING)
+            continue;
+        }
 
-      if (possible_move_found) break;
+        showPossibleMoves(j, i, false);
+
+        if (possible_move_dst.first != -1) {
+          hidePossibleMoves(possible_move_dst.first,
+              possible_move_dst.second, false);
+          possible_move_src = QPair<int, int>(j, i);
+          possible_move_found = true;
+          break;
+        }
+
+        hidePossibleMoves(false);
+      }
     }
 
-    /** none of the two players can make any move */
-    if (! possible_move_found) game_state = STATE_END;
+    if (possible_move_found) break;
   }
+
+  /** none of the two players can make any move */
+  if (! possible_move_found) game_state = STATE_END;
 
   if (do_emit) Q_EMIT refresh();
 }
@@ -1618,7 +1614,7 @@ void Game::gotNewData(void) {
       {
         QStringList coord = parser.getRest().split(" ", QString::SkipEmptyParts);
         move(coord.at(0).toUInt(), coord.at(1).toUInt(),
-            coord.at(2).toUInt(), coord.at(3).toUInt(), false);
+            coord.at(2).toUInt(), coord.at(3).toUInt());
         break;
       }
     case NetCmdParser::INVITE_REJECT:
@@ -1641,6 +1637,7 @@ void Game::gotDisconnected(void) {
 void Game::gotTimeout(void) {
   /** move by 1 forward */
   if (! replayMove(1, true))
+    /** prevent infinite tries for move beyond the end of the move list */
     replay_timer->stop();
   Q_EMIT refresh();
 }
