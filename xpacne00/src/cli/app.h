@@ -10,7 +10,7 @@
 #include <QtNetwork>
 #include "../share/game.h"
 
-/** FIXME no idea if this works on Windows without ANSI.SYS file */
+/** TODO no idea if this works on Windows without ANSI.SYS file */
 #define _TERM_C_START "\x01B["  /**< `escape' and `left bracket' characters */
 #define _TERM_C_END   "m"
 #define _TERM_CLR     "2J"

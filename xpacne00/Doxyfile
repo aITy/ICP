@@ -4,7 +4,7 @@
  */
 
 PROJECT_NAME = "ICP projekt 2013 (xnavra36, xpacne00)"
-INPUT = src/cli src/share src/test_qt
+INPUT = src/cli src/share src/gui_qt
 
 
 GENERATE_HTML = YES

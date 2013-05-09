@@ -5,9 +5,6 @@
 
 #include "app.h"
 
-//FIXME check all methods called from this file if the have at
-//  the begining isRunning() or isReplaying() check
-
 #define RETURN_AND_CLEAR cmd_l.clear(); return;
 
 void App::prepareNewGame(void) {
@@ -449,7 +446,6 @@ void App::handleInput(void) {
 /** usually this slot must prepare a solely new game, but in CLI, this game
     already exists because we can have only one game at a time */
 void App::gotConnection() {
-  qDebug("gotConnection()"); //FIXME remove this debug
 
 //  /** user did not handled the previous connection */
 //  if (! new_conn_handled) return;
