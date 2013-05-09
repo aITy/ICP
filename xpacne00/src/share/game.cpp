@@ -9,17 +9,13 @@
 #define PRINT_CUR_STATE \
   PRINT_STATE(STATE_PRE_INIT            ); \
   PRINT_STATE(STATE_CAN_START           ); \
-  PRINT_STATE(STATE_RUNNING             ); \
   PRINT_STATE(STATE_WHITE               ); \
   PRINT_STATE(STATE_BLACK               ); \
   PRINT_STATE(STATE_WAIT_FOR_CONNECTION ); \
+  PRINT_STATE(STATE_WAIT_FOR_REMOTE     ); \
   PRINT_STATE(STATE_INVITE_DISPATCH     ); \
-  PRINT_STATE(STATE_INVITE_RECEIVE      ); \
-  PRINT_STATE(STATE_GAME_DISPATCH       ); \
-  PRINT_STATE(STATE_GAME_RECEIVE        ); \
-  PRINT_STATE(STATE_MOVE_DISPATCH       ); \
-  PRINT_STATE(STATE_MOVE_RECEIVE        ); \
-  PRINT_STATE(STATE_NET_RUNNING         ); \
+  PRINT_STATE(STATE_INVITE_RECEIVED     ); \
+  PRINT_STATE(STATE_INVITE_ANSWERED     ); \
   PRINT_STATE(STATE_REPLAY_STEP         ); \
   PRINT_STATE(STATE_REPLAY_TIMED        ); \
   PRINT_STATE(STATE_REPLAY_STOP         ); \
@@ -597,11 +593,14 @@ Game::~Game(void) {
 }
 
 /**
- * we are founding a completely new game
+ * we are founding a completely new game and we have 2 cases:
+ *   the user starts completely new game
+ *   the user loads network game from file
  * @return true if OK
  */
 bool Game::gameRemote(QHostAddress addr, int port, Player::color_t color) {
-  if (! remote_will_load && isRunning()) return false;
+  if (! remote_will_load &&  /**< do we call it internally? */
+      isRunning()) return false;
 
   /** set who will be white and who black */
   if (color == Player::COLOR_WHITE) {
@@ -619,9 +618,7 @@ bool Game::gameRemote(QHostAddress addr, int port, Player::color_t color) {
 
   initXml();
   prepareNewSocket(addr, port);
-
-  //FIXME v gotNewData() menit stav!
-  if (! remote_will_load) game_state = STATE_WAIT_FOR_CONNECTION;
+  game_state = STATE_WAIT_FOR_CONNECTION;
 
   return true;
 }
@@ -639,7 +636,7 @@ bool Game::gameRemote(QTcpSocket *_sock) {
   connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
       this, SLOT(gotDisconnected()));
 
-  game_state = STATE_WAIT_FOR_CONNECTION;
+  game_state = STATE_WAIT_FOR_REMOTE;
   Q_EMIT refresh();
   return true;
 }
@@ -800,9 +797,16 @@ bool Game::gameFromFile(QString s) {
   return true;
 }
 
+bool Game::isInNetworkMeantime(void) {
+  return game_state == STATE_WAIT_FOR_CONNECTION ||
+         game_state == STATE_WAIT_FOR_REMOTE     ||
+         game_state == STATE_INVITE_DISPATCH     ||
+         game_state == STATE_INVITE_RECEIVED     ||
+         game_state == STATE_INVITE_ANSWERED;
+}
+
 bool Game::isRunning(void) {
-  return game_state != STATE_PRE_INIT &&
-         game_state != STATE_END;
+  return game_state != STATE_PRE_INIT && game_state != STATE_END;
 }
 
 bool Game::isLocal(void) {
@@ -1503,6 +1507,8 @@ void Game::setFilePath(QString fpath) {
 
 /** received only once */
 void Game::gotConnected(void) {
+  Q_ASSERT(game_state == STATE_WAIT_FOR_CONNECTION);
+
   /** initiate communication */
   if (socket->write(QString(
         TOK::INVITE +
@@ -1524,7 +1530,7 @@ void Game::gotNewData(void) {
 
   switch (parser.getNextCmd()) {
     case NetCmdParser::INVITE:
-      if (game_state == STATE_WAIT_FOR_CONNECTION) {
+      if (game_state == STATE_WAIT_FOR_REMOTE) {
         if (parser.getNextCmd() == NetCmdParser::BLACK) {
           player_black->local = false;
           player_white->local = true;
@@ -1538,14 +1544,14 @@ void Game::gotNewData(void) {
         QStringList tmp = parser.getRest().split(" ");
         remote_server_port = tmp.at(0).toInt();
         tmp.removeFirst();
-        game_state = STATE_INVITE_DISPATCH;
+        game_state = STATE_INVITE_RECEIVED;
 
         if (player_black->local)
           player_white->name = tmp.join(" ");
         else
           player_black->name = tmp.join(" ");
 
-        /** ask user for his alias */
+        /** ask user if he wants to proceed */
         Q_EMIT gotInvite(Player::COLOR_BLACK, tmp.join(" "));
       }
       break;
@@ -1559,13 +1565,15 @@ void Game::gotNewData(void) {
           err_queue.append(socket->errorString());
         }
 
-        game_state = STATE_GAME_DISPATCH;
+        /** thanks to TCP, the other side has received this message and
+            thus we can start the game itself */
+        game_state = STATE_CAN_START;
       }
       break;
 
     /** we can start playing */
     case NetCmdParser::GAME:
-      if (game_state == STATE_INVITE_RECEIVE_ANSWERED) {
+      if (game_state == STATE_INVITE_ANSWERED) {
         if (parser.getNextCmd() == NetCmdParser::NEW) {
           initXml();
           game_state = STATE_CAN_START;
@@ -1589,16 +1597,13 @@ void Game::gotNewData(void) {
 
       break;
     case NetCmdParser::MOVE:
-      if (game_state == STATE_RUNNING) {
+      //FIXME check state?
+      {
         QStringList coord = parser.getRest().split(" ", QString::SkipEmptyParts);
-        move(
-            coord.at(0).toUInt(),
-            coord.at(1).toUInt(),
-            coord.at(2).toUInt(),
-            coord.at(3).toUInt(),
-            false);
+        move(coord.at(0).toUInt(), coord.at(1).toUInt(),
+            coord.at(2).toUInt(), coord.at(3).toUInt(), false);
+        break;
       }
-      break;
     case NetCmdParser::INVITE_REJECT:
     case NetCmdParser::EXIT:
       game_state = STATE_END;
@@ -1623,9 +1628,12 @@ void Game::gotTimeout(void) {
   Q_EMIT refresh();
 }
 
-/** called after the user chooses do (not) accepts the invite */
+/** called after the user do or do not accepts the invite */
 void Game::dispatchUserResponseInvite(bool yes) {
   Q_ASSERT(socket != NULL);
+
+  /** this slot must be called only after invite was received */
+  if (game_state != STATE_INVITE_RECEIVED) return;
 
   if (yes) {
     if (socket->write(QString(TOK::INVITE_ACCEPT +
@@ -1633,7 +1641,7 @@ void Game::dispatchUserResponseInvite(bool yes) {
           .toLocal8Bit()) == -1)
       err_queue.append(socket->errorString());
 
-    game_state = STATE_INVITE_RECEIVE_ANSWERED;
+    game_state = STATE_INVITE_ANSWERED;
   }
   else {
     if (socket->write(QString(TOK::INVITE_REJECT).toLocal8Bit()) == -1)

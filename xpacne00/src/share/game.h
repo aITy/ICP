@@ -176,22 +176,18 @@ class Game : public QObject {
     } notation_t;
 
     typedef enum {
+      /** common states */
       STATE_PRE_INIT,
       STATE_CAN_START,
-      STATE_RUNNING,
       STATE_WHITE,
       STATE_BLACK,
-
+      /** network game specific states */
       STATE_WAIT_FOR_CONNECTION,
+      STATE_WAIT_FOR_REMOTE,
       STATE_INVITE_DISPATCH,
-      STATE_INVITE_RECEIVE,
-      STATE_INVITE_RECEIVE_ANSWERED,
-      STATE_GAME_DISPATCH,
-      STATE_GAME_RECEIVE,
-      STATE_MOVE_DISPATCH,
-      STATE_MOVE_RECEIVE,
-      STATE_NET_RUNNING,
-
+      STATE_INVITE_RECEIVED,
+      STATE_INVITE_ANSWERED,
+      /** replay game specific states */
       STATE_REPLAY_STEP,  /**< accepting user steps */
       STATE_REPLAY_TIMED,
       STATE_REPLAY_STOP,
@@ -215,7 +211,7 @@ class Game : public QObject {
     bool gameFromFile(QString, Player::color_t);
     //FIXME some flag, that the game can not be user-modified while replaying
     bool gameFromFile(QString);  /**< game replay (switches immediately to stopped state) */
-    //FIXME adjust to state_t!!!
+    bool isInNetworkMeantime(void);
     bool isRunning(void);  /**< is the game running in either mode? (e.g. replaying loaded game; playing network game etc.) */
     bool isLocal(void);
     state_t getState(void);//FIXME not needed?
