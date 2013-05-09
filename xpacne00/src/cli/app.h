@@ -8,7 +8,7 @@
 
 #include <QtCore>
 #include <QtNetwork>
-#include "../share/board.h"
+#include "../share/game.h"
 
 /** FIXME no idea if this works on Windows without ANSI.SYS file */
 #define _TERM_C_START "\x01B["  /**< `escape' and `left bracket' characters */
@@ -37,10 +37,10 @@
 #define TERM_BG_BLACK      _TERM_C_START _TERM_C_RESET ";4" _TERM_C_BLACK _TERM_C_END
 #define TERM_BG_WHITE      _TERM_C_START _TERM_C_RESET ";4" _TERM_C_WHITE _TERM_C_END
 #define TERM_BG_TIP        _TERM_C_START _TERM_C_RESET ";4" _TERM_C_GREEN _TERM_C_END
-#define TERM_FG_MEN_BLACK  _TERM_C_START _TERM_C_DIM ";3" _TERM_C_BLUE   _TERM_C_END "o"
-#define TERM_FG_MEN_WHITE  _TERM_C_START _TERM_C_DIM ";3" _TERM_C_RED _TERM_C_END "o"
-#define TERM_FG_KING_BLACK _TERM_C_START _TERM_C_DIM ";3" _TERM_C_BLUE   _TERM_C_END "?"
-#define TERM_FG_KING_WHITE _TERM_C_START _TERM_C_DIM ";3" _TERM_C_RED _TERM_C_END "?"
+#define TERM_FG_MEN_BLACK  _TERM_C_START _TERM_C_DIM   ";3" _TERM_C_BLUE  _TERM_C_END
+#define TERM_FG_MEN_WHITE  _TERM_C_START _TERM_C_DIM   ";3" _TERM_C_RED   _TERM_C_END
+#define TERM_FG_KING_BLACK _TERM_C_START _TERM_C_DIM   ";3" _TERM_C_BLUE  _TERM_C_END
+#define TERM_FG_KING_WHITE _TERM_C_START _TERM_C_DIM   ";3" _TERM_C_RED   _TERM_C_END
 
 /**
  * main task which comprises the whole console program
@@ -55,11 +55,12 @@ private:
 
   QTcpServer *server;
   QSocketNotifier *notifier;
+  bool new_conn_handled;  /**< user must handle it by hand */
   QString line;
   QStringList cmd_l;
-  Game g;
+  Game *g;
 
-  void parseLine();
+  void prepareNewGame(void);
 
 public:
   App(QCoreApplication *);
@@ -68,7 +69,10 @@ public:
 public Q_SLOTS:
   void refresh(void);
   void handleInput(void);
-  void gotConnection();
+  void gotConnection(void);
+  void schedule_refresh(void);
+  void gotInviteSlot(Player::color_t, QString);
+  void gotExitSlot(void);
 
 Q_SIGNALS:
   // emit blocks unless queued connections are used
