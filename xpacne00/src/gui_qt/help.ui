@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>helpDialog</class>
+ <widget class="QDialog" name="helpDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>406</width>
+    <height>412</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Nápověda</string>
+  </property>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>40</y>
+     <width>361</width>
+     <height>371</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Princip hry:
+Dáma je desková hra pro dva hráče. Hraje se na šachovnici o velikosti 8 x 8 polí. Soupeři mají na začátku hry 12 kamenů a diagonálními pohyby dopředu se snaží přeskočením vyřadit protihráčovy kameny.
+Speciální figurou ve hře je dáma, kterou hráč získá pokud dojde s kamenem na konec šachovnice na soupeřově straně. Dáma se může pohybovat všemi diagonálními směry o libovolný počet míst.
+Cílem hry je vyřadit všechny soupeřovy kameny. Hru začíná bílý hráč.
+
+Vlastnosti hry:
+Nová hra se spouští v hlavní nabídce pomocí záložky Hra.
+Hru je možno hrát lokálně proti soupeři nebo proti počítači (umělá inteligence počítače, není rozvinuta a slouží spíše jako ukázka).
+Hru je možno hrát i přes síť. V tomto případě jeden z hráčů je iniciátorem a musí vyplnit síťové nastavení. Druhý hráč nabídku hry musí potvrdit.
+
+Hra se dá uložit, a to do formátu XML nebo ICP syntaxe, pro pozdější dohrání nebo přehrání.
+Uloženou hru je možné otevřít v hlavním menu v záložce Soubor.
+
+Hra nabízí mód přehrání (replay) uložené hry. V levém menu hlavního okna jsou pro přehrání přichystány běžné nástroje (přehrávat, pause, stop, dopředu, dozadu). Lze nastavit rychlost přehrávání tahů v milisekundách (ms) a pro funkce dopředu a zpět lze nastavit počet kroků.</string>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>10</y>
+     <width>281</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Nápověda ke hře Dáma ICP 2013</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
