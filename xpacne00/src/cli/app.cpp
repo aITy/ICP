@@ -55,6 +55,7 @@ App::App(QCoreApplication *_parent) :
   // not needed (notifier is set enabled by default)
   // notifier->setEnabled(true);
 
+  /** in CLI we can handle only 1 game at a time */
   prepareNewGame();
 }
 
@@ -149,29 +150,6 @@ void App::refresh(void) {
     qtout << endl;
   }
 
-//  /** in CLI we can handle only 1 game at a time */
-//  if (! g->isRunning() && ! new_conn_handled) {
-//    new_conn_handled = true;
-//
-//    for (;;) {
-//      qtout << "Connection request from " <<
-//        g->getRemoteAddr().toString() << ":" <<
-//        QString::number(g->getRemotePort()) << ", accept? [y/n] " << flush;
-//
-//      /** read one line of user input */
-//      line = qtin.readLine();
-//      if (line == "y") {
-//        schedule_refresh();
-//        RETURN_AND_CLEAR;
-//      }
-//      else if (line == "n") {
-//        prepareNewGame();
-//        schedule_refresh();
-//        RETURN_AND_CLEAR;
-//      }
-//    }
-//  }
-
   qtout << "for help type h" << endl << ">>> " << flush;
 
   if (cmd_l.isEmpty()) {
@@ -258,13 +236,19 @@ void App::refresh(void) {
         qterr << "ERR: Invalid IP addr/hostname: " << cmd_l.at(1) << endl;
       }
     }
+    else {
+      qterr << "ERR: Invalid input, please revise it." << endl;
+    }
   }
-  else if (cmd_l.at(0) == "nn") {
+  else if (cmd_l.at(0) == "nc") {
     if (cmd_l.size() == 2) {
       if (cmd_l.at(1) == "w")
         g->gameLocal(true);
       else if (cmd_l.at(1) == "b")
         g->gameLocal(false);
+    }
+    else {
+      qterr << "ERR: Invalid input, please revise it." << endl;
     }
   }
   else if (cmd_l.at(0) == "l") {
@@ -292,6 +276,9 @@ void App::refresh(void) {
     if (cmd_l.size() == 2) {
       if (! g->gameFromFile(cmd_l.at(1)))
         qterr << g->getError() << endl;
+    }
+    else {
+      qterr << "ERR: Invalid input, please revise it." << endl;
     }
   }
   else if (cmd_l.at(0) == "s") {
@@ -333,6 +320,9 @@ void App::refresh(void) {
       /** tmp gets synced and closed after its destroyal */
       schedule_refresh();
     }
+    else {
+      qterr << "ERR: Invalid input, please revise it." << endl;
+    }
   }
   else if (cmd_l.at(0) == "m") {
     if (cmd_l.size() == 3) {
@@ -357,6 +347,9 @@ void App::refresh(void) {
         schedule_refresh();
       }
     }
+    else {
+      qterr << "ERR: Invalid input, please revise it." << endl;
+    }
   }
   else if (cmd_l.at(0) == "pm") {
     if (cmd_l.size() == 2) {
@@ -369,6 +362,9 @@ void App::refresh(void) {
 
       g->showPossibleMoves(coord.first, coord.second);
       schedule_refresh();
+    }
+    else {
+      qterr << "ERR: Invalid input, please revise it." << endl;
     }
   }
   else if (cmd_l.at(0) == "hm") {

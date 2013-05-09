@@ -220,7 +220,7 @@ class Game : public QObject {
     bool showPossibleMoves(unsigned int, unsigned int, bool do_emit = true);
     void hidePossibleMoves(bool do_emit = true);
     void hidePossibleMoves(int, int, bool do_emit = true);
-    void adviceMove(void);
+    void adviceMove(bool do_emit = true);
 
     void setReplayTimeout(int);
     bool replayMove(unsigned int, bool);
@@ -257,7 +257,8 @@ class Game : public QObject {
     /** used for checking of possible moves before a user a move is processed */
     QPair<int, int> last_move_dst;
     IcpSyntaxParser::pair_uint_t possible_jump;
-    QPair<int, int> possible_move_present;
+    QPair<int, int> possible_move_src;
+    QPair<int, int> possible_move_dst;
     /** for replay mode: index of item with the currently applied move */
     int current_move_index;
     Player::color_t game_ai;

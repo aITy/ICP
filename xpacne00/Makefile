@@ -27,5 +27,7 @@ clean:
 	make -C $(SRC_CLI) distclean
 	make -C $(SRC_GUI_QT) distclean
 
-doc:
+doc: FORCE
 	doxygen
+
+FORCE:
