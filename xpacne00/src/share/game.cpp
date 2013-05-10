@@ -1280,17 +1280,26 @@ void Game::adviceMove(bool do_emit) {
             continue;
         }
 
-        showPossibleMoves(j, i, false);
-
-        if (possible_move_dst.first != -1) {
+        /** we can jump => end it right here */
+        if (showPossibleMoves(j, i, false)) {
           hidePossibleMoves(possible_move_dst.first,
               possible_move_dst.second, false);
           possible_move_src = QPair<int, int>(j, i);
           possible_move_found = true;
           break;
         }
-
-        hidePossibleMoves(false);
+        /** we can't jump => have to try other boxes */
+        else {
+          if (possible_move_dst.first == -1) {
+            hidePossibleMoves(false);
+          }
+          else {
+            hidePossibleMoves(possible_move_dst.first,
+                possible_move_dst.second, false);
+            possible_move_src = QPair<int, int>(j, i);
+            possible_move_found = true;
+          }
+        }
       }
     }
 
