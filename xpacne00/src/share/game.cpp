@@ -114,33 +114,32 @@ NetCmdParser::tok_t NetCmdParser::getNextCmd() {
     s.remove(0, CONST_STR_LEN(TOK::INVITE_REJECT));
     return INVITE_REJECT;
   }
+  else if (s.startsWith(TOK::WHITE)) {
+    s.remove(0, CONST_STR_LEN(TOK::WHITE));
+    return WHITE;
+  }
+  else if (s.startsWith(TOK::BLACK)) {
+    s.remove(0, CONST_STR_LEN(TOK::BLACK));
+    return BLACK;
+  }
   else if (s.startsWith(TOK::GAME)) {
     s.remove(0, CONST_STR_LEN(TOK::GAME));
-
-    if (s.startsWith(TOK::WHITE)) {
-      s.remove(0, CONST_STR_LEN(TOK::WHITE));
-      return WHITE;
-    }
-    else if (s.startsWith(TOK::BLACK)) {
-      s.remove(0, CONST_STR_LEN(TOK::BLACK));
-      return BLACK;
-    }
-
-    if (s.startsWith(TOK::NEW)) {
-      s.remove(0, CONST_STR_LEN(TOK::NEW));
-      return NEW;
-    }
-    else if (s.startsWith(TOK::LOAD)) {
-      s.remove(0, CONST_STR_LEN(TOK::LOAD));
-      return LOAD;
-    }
+    return GAME;
   }
-  else if (s.startsWith(TOK::GAME_ACCEPT)) {
-    return GAME_ACCEPT;
+  else if (s.startsWith(TOK::NEW)) {
+    s.remove(0, CONST_STR_LEN(TOK::NEW));
+    return NEW;
   }
-  else if (s.startsWith(TOK::GAME_REJECT)) {
-    return GAME_REJECT;
+  else if (s.startsWith(TOK::LOAD)) {
+    s.remove(0, CONST_STR_LEN(TOK::LOAD));
+    return LOAD;
   }
+//  else if (s.startsWith(TOK::GAME_ACCEPT)) {
+//    return GAME_ACCEPT;
+//  }
+//  else if (s.startsWith(TOK::GAME_REJECT)) {
+//    return GAME_REJECT;
+//  }
   else if (s.startsWith(TOK::MOVE)) {
     s.remove(0, CONST_STR_LEN(TOK::MOVE));
     return MOVE;
@@ -843,7 +842,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
   }
 
   /** in network_game and local_game_with_AI color matters */
-  if (! isLocal() || game_ai != Player::COLOR_DONT_KNOW) {
+  if ((do_emit && ! isLocal()) || game_ai != Player::COLOR_DONT_KNOW) {
     /** am I allowed to move this men? */
     if (! ((player_white->local && white_is_playing) ||
            (player_black->local && black_is_playing) ||
@@ -1547,6 +1546,7 @@ void Game::gotConnected(void) {
 
 void Game::gotNewData(void) {
   Q_ASSERT(socket != NULL);
+
   QString s(socket->readAll());
   NetCmdParser parser(s);
 
@@ -1574,7 +1574,9 @@ void Game::gotNewData(void) {
           player_black->name = tmp.join(" ");
 
         /** ask user if he wants to proceed */
-        Q_EMIT gotInvite(Player::COLOR_BLACK, tmp.join(" "));
+        Q_EMIT gotInvite(
+            (player_black->local == true) ? Player::COLOR_WHITE : Player::COLOR_BLACK,
+            tmp.join(" "));
       }
       break;
 
@@ -1603,7 +1605,7 @@ void Game::gotNewData(void) {
         /** load */
         else {
           if (! doc->setContent(parser.getRest())) {
-            qDebug("setContent() from network failed");
+            err_queue.append("ERR: setContent() from network failed!");
             game_state = STATE_END;
             return;
           }
@@ -1622,10 +1624,12 @@ void Game::gotNewData(void) {
       //FIXME check state?
       {
         QStringList coord = parser.getRest().split(" ", QString::SkipEmptyParts);
-        move(coord.at(0).toUInt(), coord.at(1).toUInt(),
-            coord.at(2).toUInt(), coord.at(3).toUInt());
-        break;
+        if (move(coord.at(0).toUInt(), coord.at(1).toUInt(),
+            coord.at(2).toUInt(), coord.at(3).toUInt(), false) == ERR_OK) {
+          Q_EMIT refresh();
+        }
       }
+      break;
     case NetCmdParser::INVITE_REJECT:
     case NetCmdParser::EXIT:
       game_state = STATE_END;
@@ -1633,6 +1637,7 @@ void Game::gotNewData(void) {
       Q_EMIT gotExit();
       break;
     default:
+      err_queue.append(QString (QString("unknown NET msg: ") + s).toLocal8Bit());
       break;
   }
 }

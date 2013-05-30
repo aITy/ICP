@@ -57,13 +57,13 @@ namespace TOK {
   CONST_STR( INVITE       , "INVITE "        );
   CONST_STR( INVITE_ACCEPT, "INVITE_ACCEPT " );
   CONST_STR( INVITE_REJECT, "INVITE_REJECT"  );
-  CONST_STR( GAME         , "GAME "          );
   CONST_STR( WHITE        , "WHITE "         );
   CONST_STR( BLACK        , "BLACK "         );
+  CONST_STR( GAME         , "GAME "          );
   CONST_STR( NEW          , "NEW"            );
   CONST_STR( LOAD         , "LOAD "          );
-  CONST_STR( GAME_ACCEPT  , "GAME_ACCEPT"    );
-  CONST_STR( GAME_REJECT  , "GAME_REJECT"    );
+//  CONST_STR( GAME_ACCEPT  , "GAME_ACCEPT"    );
+//  CONST_STR( GAME_REJECT  , "GAME_REJECT"    );
   CONST_STR( MOVE         , "MOVE "          );
   CONST_STR( EXIT         , "EXIT"           );
 }
