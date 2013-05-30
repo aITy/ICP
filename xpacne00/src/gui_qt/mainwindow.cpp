@@ -11,6 +11,7 @@ MainWindow* MainWindow::instance = NULL;
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
+    instance = this;
     setupUi(this);
     setWindowTitle(qApp->applicationName());
     setupActions();
@@ -27,15 +28,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, SIGNAL(storePlayer(Player::color_t,QString, GameBoard*)), this, SLOT(savePlayer(Player::color_t, QString, GameBoard*)));
 }
 
-/**
- * MainWindow is singleton and this function returns its instance
- */
-MainWindow* MainWindow::getInstance() {
-    if (!instance)
-        instance = (MainWindow *) qApp->activeWindow();
-
-    return instance;
-}
 
 /**
  * reimplemented close event function that prompt user, if he really want to quit the application
@@ -252,7 +244,7 @@ void MainWindow::setStatusMsg(QString str) {
  * Set moves record to right menu
  * @param Recorded moves
  */
-void MainWindow::setLineEditText(QString str) {
+void MainWindow::setLineEditText(const QString & str) {
     lineEdit_Moves->setPlainText(str);
 }
 

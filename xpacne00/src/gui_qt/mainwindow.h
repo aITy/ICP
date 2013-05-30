@@ -34,10 +34,7 @@ class MainWindow : public QMainWindow, Ui::MainWindow {
     Q_OBJECT
 public:
     MainWindow(QWidget *parent = 0);
-    MainWindow * getMainWindow() {
-        return instance;
-    }
-    static MainWindow * getInstance();
+    static MainWindow * getInstance(){ return instance; }
 
     /** add game function and function that return games count*/
     void addGame(GameBoard * );
@@ -52,7 +49,7 @@ public:
     /** set replay buttons */
     void toggleReplayButtons(Game *);
     /** set moves notification area content */
-    void setLineEditText(QString str);
+    void setLineEditText(const QString &);
     typedef enum {
       COLOR_DONT_KNOW,
       COLOR_WHITE,
