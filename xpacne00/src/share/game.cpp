@@ -23,8 +23,8 @@ void QTimerImproved::resendTimeout(void) {
 
 QTimerImproved::QTimerImproved(QObject *par) :
   QTimer(par), begin(0), end(0), paused(false) {
-  connect(this, SIGNAL(timeout(void)), this, SLOT(resendTimeout(void)));
-}
+    connect(this, SIGNAL(timeout(void)), this, SLOT(resendTimeout(void)));
+  }
 
 void QTimerImproved::start(void) {
   paused = false;
@@ -77,7 +77,7 @@ bool QTimerImproved::isPaused(void) {
 IcpSyntaxParser::pair_uint_t IcpSyntaxParser::strCoordToUInt(QString s, bool *ok) {
   /** allow loading only 8x8 sized boards */
   if (! (s.at(0) >= 'a' && s.at(0) <= 'h' &&
-         s.at(1) >= '1' && s.at(1) <= '8') ) {
+        s.at(1) >= '1' && s.at(1) <= '8') ) {
     if (ok != NULL) *ok = false;
 
     return pair_uint_t(0, 0);
@@ -134,12 +134,12 @@ NetCmdParser::tok_t NetCmdParser::getNextCmd() {
     s.remove(0, CONST_STR_LEN(TOK::LOAD));
     return LOAD;
   }
-//  else if (s.startsWith(TOK::GAME_ACCEPT)) {
-//    return GAME_ACCEPT;
-//  }
-//  else if (s.startsWith(TOK::GAME_REJECT)) {
-//    return GAME_REJECT;
-//  }
+  //  else if (s.startsWith(TOK::GAME_ACCEPT)) {
+  //    return GAME_ACCEPT;
+  //  }
+  //  else if (s.startsWith(TOK::GAME_REJECT)) {
+  //    return GAME_REJECT;
+  //  }
   else if (s.startsWith(TOK::MOVE)) {
     s.remove(0, CONST_STR_LEN(TOK::MOVE));
     return MOVE;
@@ -158,20 +158,20 @@ QString NetCmdParser::getRest(void) {
 Player::Player(const Game &_parent) :
   par(_parent), kicked(0), name("Player Alias"), local(true) { }
 
-/**
- * @return true if game can be played further
- */
-bool Player::incKicked(void) {
-  /** compute the total number of men of one player */
-  if ( ( (par.board.size() / 2) *
-        ((par.board.size() / 2) -1) ) <= (kicked +1))
-    /** all men kicked :-( */
-    return false;
+  /**
+   * @return true if game can be played further
+   */
+  bool Player::incKicked(void) {
+    /** compute the total number of men of one player */
+    if ( ( (par.board.size() / 2) *
+          ((par.board.size() / 2) -1) ) <= (kicked +1))
+      /** all men kicked :-( */
+      return false;
 
-  kicked++;
-  /** at least one men is on the board :-) */
-  return true;
-}
+    kicked++;
+    /** at least one men is on the board :-) */
+    return true;
+  }
 
 bool Player::decKicked(void) {
   if (kicked <= 0) return false;
@@ -190,17 +190,17 @@ void Game::initXml(void) {
 
   /** special XML characters are escaped automatically */
   if (! doc->setContent(
-      QString("<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"
-      "<!-- standalone because we have no DTD for it -->"
-      "<draughts version=\"1.0\">"
-      "<game type=\"network/local\" host=\"hostname/IPv4/IPv6\" port=\"7564\"/>"
-      "<players>"
-      "<black>") + QString(player_black->name) + QString("</black>"
-      "<white>") + QString(player_white->name) + QString("</white>"
-      "</players>"
-      "<moves>"
-      "</moves>"
-      "</draughts>")))
+        QString("<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"
+          "<!-- standalone because we have no DTD for it -->"
+          "<draughts version=\"1.0\">"
+          "<game type=\"network/local\" host=\"hostname/IPv4/IPv6\" port=\"7564\"/>"
+          "<players>"
+          "<black>") + QString(player_black->name) + QString("</black>"
+            "<white>") + QString(player_white->name) + QString("</white>"
+              "</players>"
+              "<moves>"
+              "</moves>"
+              "</draughts>")))
     qDebug("setContent() failed");
 }
 
@@ -250,7 +250,7 @@ void Game::appendMoveToXml(unsigned int srcx, unsigned int srcy,
     case MEN_BLACK_KING:
       attr.setValue(XML::STR_BLACK_KING);
       break;
-    // MEN_POSSIBLE_MOVE, MEN_NONE
+      // MEN_POSSIBLE_MOVE, MEN_NONE
     default:
       attr.setValue(XML::STR_NONE);
       break;
@@ -364,7 +364,7 @@ bool Game::moveFromXml(bool forward) {
 
       board[dsty][dstx] = tmp;
       /** last_move_dst changes are not really needed for replaying,
-          but for loading XML */
+        but for loading XML */
       last_move_dst.first  = -1;
       last_move_dst.second = -1;
     }
@@ -450,7 +450,7 @@ Player *Game::getPlayerFromCoord(unsigned int x, unsigned int y) {
     return player_white;
   }
   else if (board[y][x] == MEN_BLACK ||
-           board[y][x] == MEN_BLACK_KING) {
+      board[y][x] == MEN_BLACK_KING) {
     return player_black;
   }
   else {
@@ -1029,7 +1029,10 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
          /** some direct jump possible */
          showPossibleMoves(last_move_dst.first, last_move_dst.second, false))
         ) {
+          showPossibleMoves(last_move_dst.first, last_move_dst.second, false);
+          hidePossibleMoves(false);
           adviceMove(false);
+
           QPair<int, int> _src = possible_move_src;
           QPair<int, int> _dst = possible_move_dst;
           hidePossibleMoves(false);
@@ -1262,20 +1265,22 @@ void Game::adviceMove(bool do_emit) {
   }
 
   bool possible_move_found = false;
+  bool possible_jump_found = false;
+  QPair<int, int> mv_dst = QPair<int, int>(-1, -1);
 
   for (int i = 0; i < board.size(); ++i) {
     for (int j = 0; j < board[i].size(); ++j) {
       /** is it white/black men/king? */
-      if (isBlackBox(i, j) && board[j][i] != MEN_NONE) {
+      if (isBlackBox(j, i) && board[i][j] != MEN_NONE) {
         if (game_state == STATE_WHITE) {
           /** white could not jump => we must alternate */
-          if (board[j][i] == MEN_WHITE || board[j][i] == MEN_WHITE_KING)
+          if (board[i][j] == MEN_WHITE || board[i][j] == MEN_WHITE_KING)
             continue;
         }
         else {
           Q_ASSERT(game_state == STATE_BLACK);
           /** black could not jump => we must alternate */
-          if (board[j][i] == MEN_BLACK || board[j][i] == MEN_BLACK_KING)
+          if (board[i][j] == MEN_BLACK || board[i][j] == MEN_BLACK_KING)
             continue;
         }
 
@@ -1284,7 +1289,8 @@ void Game::adviceMove(bool do_emit) {
           hidePossibleMoves(possible_move_dst.first,
               possible_move_dst.second, false);
           possible_move_src = QPair<int, int>(j, i);
-          possible_move_found = true;
+          mv_dst = possible_move_dst;
+          possible_jump_found = true;
           break;
         }
         /** we can't jump => have to try other boxes */
@@ -1296,17 +1302,21 @@ void Game::adviceMove(bool do_emit) {
             hidePossibleMoves(possible_move_dst.first,
                 possible_move_dst.second, false);
             possible_move_src = QPair<int, int>(j, i);
+            mv_dst = possible_move_dst;
             possible_move_found = true;
           }
         }
       }
     }
 
-    if (possible_move_found) break;
+    if (possible_jump_found) break;
   }
 
   /** none of the two players can make any move */
-  if (! possible_move_found) game_state = STATE_END;
+  if (! possible_move_found && ! possible_jump_found)
+    game_state = STATE_END;
+
+  possible_move_dst = mv_dst;
 
   if (do_emit) Q_EMIT refresh();
 }
@@ -1415,7 +1425,7 @@ void Game::syncXml(void) {
 }
 
 QString Game::getXmlStr(void) {
-  Q_ASSERT(doc != NULL);
+  if (doc != NULL) return "";
   syncXml();
   return doc->toString();
 }
