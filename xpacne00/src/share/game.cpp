@@ -1425,7 +1425,7 @@ void Game::syncXml(void) {
 }
 
 QString Game::getXmlStr(void) {
-  if (doc != NULL) return "";
+  if (doc == NULL) return "";
   syncXml();
   return doc->toString();
 }
