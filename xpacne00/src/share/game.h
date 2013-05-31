@@ -252,6 +252,7 @@ class Game : public QObject {
     /** queue for errors which can not be output immediately */
     QList<QString> err_queue;
     state_t game_state;
+    state_t game_state_net_from_file;
 
     /** used for checking of possible moves before a user a move is processed */
     QPair<int, int> last_move_dst;
@@ -301,7 +302,7 @@ class Game : public QObject {
     /** let the user accept the new connection */
     void gotInvite(Player::color_t, QString);
     void gotExit(void);
-	void gotRejected(void);
+    void gotRejected(void);
 };
 
 #endif

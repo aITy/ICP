@@ -196,11 +196,11 @@ void Game::initXml(void) {
           "<game type=\"network/local\" host=\"hostname/IPv4/IPv6\" port=\"7564\"/>"
           "<players>"
           "<black>") + QString(player_black->name) + QString("</black>"
-            "<white>") + QString(player_white->name) + QString("</white>"
-              "</players>"
-              "<moves>"
-              "</moves>"
-              "</draughts>")))
+          "<white>") + QString(player_white->name) + QString("</white>"
+          "</players>"
+          "<moves>"
+          "</moves>"
+          "</draughts>")))
     qDebug("setContent() failed");
 }
 
@@ -540,7 +540,8 @@ Game::Game(QTcpServer *_server) :
   current_move_index(-1),
   game_ai(Player::COLOR_DONT_KNOW),
   replay_timer(NULL),
-  replay_delay(DEFAULT_TIMEOUT)
+  replay_delay(DEFAULT_TIMEOUT),
+  remote_server_port(-1)
 {
   player_white = new Player(*this);
   player_white->name = "Player White";
@@ -604,9 +605,8 @@ bool Game::gameRemote(QHostAddress addr, int port, Player::color_t color) {
   prepareNewSocket(addr, port);
 
   if (! remote_will_load) {
-	game_state = STATE_WAIT_FOR_CONNECTION;
-	Q_EMIT refresh();
-
+    game_state = STATE_WAIT_FOR_CONNECTION;
+    Q_EMIT refresh();
   }
 
   return true;
@@ -711,13 +711,13 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
     /** network game */
     else if (doc->documentElement().firstChildElement(XML::STR_GAME).
         attributeNode(XML::STR_TYPE).value() == XML::STR_NETWORK) {
-      /** the remote side will have to load my config */
-      remote_will_load = true;
       game_state = STATE_CAN_START;
-
       /** interpret all available moves */
       while (moveFromXml(true));
+      game_state_net_from_file = game_state;
 
+      /** the remote side will have to load my config */
+      remote_will_load = true;
       if (! gameRemote(
             QHostAddress(doc->documentElement().
               firstChildElement(XML::STR_GAME).
@@ -886,7 +886,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
       color = QPair<int, int>(MEN_WHITE, MEN_WHITE_KING);
     else
       color = QPair<int, int>(MEN_BLACK, MEN_BLACK_KING);
-//qDebug("howk00");//FIXME
+
     /** try to find any source for a move the current player should do
       (i.e. must jump) instead of the move he's currently requesting */
     for (int i = 0; i < board.size(); ++i) {
@@ -895,7 +895,6 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
             (board[i][j] == color.first || board[i][j] == color.second) &&
             j != int(srcx) && i != int(srcy) &&
             showPossibleMoves(j, i, false)) {
-//qDebug("JMP necessary!");//FIXME
           err_queue.append("ERR: Some jump is necessary!");
           hidePossibleMoves(false);
           return ERR_INVALID_MOVE;
@@ -1064,10 +1063,7 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
   hidePossibleMoves(false);
 
   /** check presence */
-  if (board[y][x] == MEN_NONE) {
-//qDebug("MEN_NONE");//FIXME
-    return false;
-  }
+  if (board[y][x] == MEN_NONE) return false;
 
   bool can_jump = false;
   possible_move_dst = QPair<int, int>(-1, -1);
@@ -1200,7 +1196,6 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
       FIND_POSSIBLE_MOVE_FOR_MEN(x +1, y -1, x +2, y -2);
     }
     else {
-//qDebug("NO CHANGE");//FIXME
       /** no change => no emit */
       return false;
     }
@@ -1211,7 +1206,6 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
 
   if (do_emit) Q_EMIT refresh();
 
-//qDebug("RETURNING");//FIXME
   return can_jump;
 }
 
@@ -1546,6 +1540,7 @@ void Game::setFilePath(QString fpath) {
 
 /** received only once */
 void Game::gotConnected(void) {
+  //FIXME
   //Q_ASSERT(game_state == STATE_WAIT_FOR_CONNECTION);
 
   /** initiate communication */
@@ -1611,7 +1606,10 @@ void Game::gotNewData(void) {
 
         /** thanks to TCP, the other side has received this message and
             thus we can start the game itself */
-        game_state = STATE_CAN_START;
+        if (remote_will_load)
+          game_state = game_state_net_from_file;
+        else
+          game_state = STATE_CAN_START;
       }
       break;
 
@@ -1631,7 +1629,6 @@ void Game::gotNewData(void) {
           }
 
           game_state = STATE_CAN_START;
-
           /** interpret all available moves */
           while (moveFromXml(true));
         }
@@ -1651,10 +1648,10 @@ void Game::gotNewData(void) {
       }
       break;
     case NetCmdParser::INVITE_REJECT:
-		game_state = STATE_END;
-		socket->disconnectFromHost();
-		Q_EMIT gotRejected();
-		break;
+      game_state = STATE_END;
+      socket->disconnectFromHost();
+      Q_EMIT gotRejected();
+      break;
     case NetCmdParser::EXIT:
       game_state = STATE_END;
       socket->disconnectFromHost();
@@ -1723,5 +1720,5 @@ void Game::dispatchUserResponseExit(void) {
 }
 
 Game::state_t Game::getState(void) {
-	return game_state;
+  return game_state;
 }
