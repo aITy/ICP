@@ -58,8 +58,25 @@ public:
     void removeLightRock(int);
     void clearBoard();
 
+    /** function that retuns instance of canvas */
+    Canvas * getCanvas() { return canvas;  }
+
     /** variable holding all moves showed in notification area */
     QString lineedit_moves;
+
+
+
+
+
+
+
+	void checkForEmptyBoard();
+	
+
+
+
+
+
 private:
     /** rock */
     QList <DarkRock *> dark_rocks;

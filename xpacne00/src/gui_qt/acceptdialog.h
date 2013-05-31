@@ -9,11 +9,21 @@
 #include <QDialog>
 #include "ui_acceptdialog.h"
 
+class Game;
+
 class AcceptDialog : public QDialog, Ui::acceptDialog
 {
     Q_OBJECT
 public:
-    AcceptDialog(QWidget * parent = 0);
+    AcceptDialog(Game *, QWidget * parent = 0);
+private:
+	Game * g;
+signals:
+	void userAccept(Game *);
+	void userReject(Game *);
+private slots:
+	void accepting();
+	void rejecting();
 };
 
 #endif // ACCEPTDIALOG_H
