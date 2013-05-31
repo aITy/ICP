@@ -77,9 +77,6 @@ private:
     QList<GameBoard*> games_arr;
     /** server */
     QTcpServer * server;
-	/** stored pointer on prepared game */
-	Game * prepared_game;
-	GameBoard * prepared_board;
 private slots:
     /** got connection slot */
 	void incomingConnection();
@@ -88,7 +85,6 @@ private slots:
     void gotExitSlot();
 	void gotRejected();
     void newNetworkGame(QStringList list);
-    void savePlayer(Player::color_t color, QString alias, GameBoard * b);
     void gotInviteSlot(Player::color_t color, QString str);
     /** replay buttons slots */
     void on_spinBox_Delay_valueChanged(int );
@@ -114,7 +110,5 @@ private slots:
     bool saveXml();
 	void inviteAccepted(Game *);
 	void inviteRejected(Game *);
-signals:
-    void storePlayer(Player::color_t, QString, GameBoard*);
 };
 #endif // MAINWINDOW_H

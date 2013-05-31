@@ -25,9 +25,6 @@ MainWindow::MainWindow(QWidget *parent) :
     else
         portLabel->setText(portLabel->text() + QString::number(server->serverPort()));
 
-    //connect(this, SIGNAL(storePlayer(Player::color_t,QString, GameBoard*)), this, SLOT(savePlayer(Player::color_t, QString, GameBoard*)));
-	prepared_game = NULL;
-	prepared_board = NULL;
 }
 
 
@@ -454,14 +451,6 @@ void MainWindow::gotInviteSlot(Player::color_t color, QString str) {
     //GameBoard *b = games_arr.at(tabWidget_Games->currentIndex());
     //emit(storePlayer(color, str, b));
 	
-	qDebug() <<prepared_game << "gotInviteSlot " << QString::number(prepared_game == NULL).toLocal8Bit();
-	if (prepared_board != NULL) {
-		
-		this->addGame(prepared_board);
-		qDebug() << "prisel inviteSlot";
-	}
-
-	qDebug() << "prisel inviteslot";
 	setStatusMsg("User accepted your invite on network game");
 }
 
@@ -469,14 +458,12 @@ void MainWindow::gotInviteSlot(Player::color_t color, QString str) {
  * Set status message to inform user about disconnect from game
  */
 void MainWindow::gotExitSlot() {
-	qDebug() << "gotExitslot";
     setStatusMsg("disconnected from remote game");
 	int i = 0;
 	bool found = false;
 	Game * g = qobject_cast<Game *>( this->sender() );
 	qDebug() << QString::number(g->getState()).toLocal8Bit();
 	if (g->getState() != Game::STATE_END) {
-		qDebug() << "hra nezacala";
 		while(!found) {
 			QWidget * w = tabWidget_Games->widget(i);
 			GameBoard * b = qobject_cast<GameBoard *>(w);
@@ -498,7 +485,6 @@ void MainWindow::gotRejected() {
 	bool found = false;
 	Game * g = qobject_cast<Game *>( this->sender() );
 	
-	qDebug() << "hra nezacala";
 	while(!found) {
 		QWidget * w = tabWidget_Games->widget(i);
 		GameBoard * b = qobject_cast<GameBoard *>(w);
@@ -525,33 +511,17 @@ void MainWindow::newNetworkGame(QStringList list) {
 	GameBoard * b  = new GameBoard(g);
 	this->addGame(b);
 
-	//qDebug() <<prepared_game << "new network game before gameRemote" << QString::number(prepared_game == NULL).toLocal8Bit();
-
     QHostAddress addr;
     addr.setAddress(list.at(0));
-
-    //connect(prepared_game, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
-    //connect(prepared_game, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
 
     connect(g, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
 	connect(g, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
 	connect(g, SIGNAL(gotRejected()), this, SLOT(gotRejected()));
-    
-	//if (! (prepared_game->gameRemote(addr, list.at(1).toUInt(), Player::COLOR_WHITE))) {
-    //    setStatusMsg(prepared_game->getError());
 
 	if (! (g->gameRemote(addr, list.at(1).toUInt(), Player::COLOR_WHITE))) {
         setStatusMsg(g->getError());
-		qDebug() << "prepared game game remote fail";
     }
-	//qDebug() << prepared_game << "new netwrk game after gameRemote" << QString::number(prepared_game == NULL).toLocal8Bit();
 	
-}
-
-
-void MainWindow::savePlayer(Player::color_t color, QString alias, GameBoard * b) {
-    b->player_alias = alias;
-    b->player_color = color;
 }
 
 void MainWindow::on_pushButton_Advice_clicked()

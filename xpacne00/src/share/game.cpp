@@ -454,7 +454,6 @@ Player *Game::getPlayerFromCoord(unsigned int x, unsigned int y) {
     return player_black;
   }
   else {
-    qDebug("ERR: Game::getPlayerFromCoord() returns NULL.");
     return NULL;
   }
 }
@@ -1563,7 +1562,6 @@ void Game::gotNewData(void) {
   QString s(socket->readAll());
   NetCmdParser parser(s);
 
-  qDebug() << QString (QString("known NET msg: ") + s).toLocal8Bit();
   switch (parser.getNextCmd()) {
     case NetCmdParser::INVITE:
       if (game_state == STATE_WAIT_FOR_REMOTE) {
