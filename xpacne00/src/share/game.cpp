@@ -460,30 +460,19 @@ Player *Game::getPlayerFromCoord(unsigned int x, unsigned int y) {
 }
 
 bool Game::isBlackBox(unsigned int x, unsigned int y) {
-  bool ret = false;
   /** top left box is white */
   if (y % 2 == 0) {
     if (x % 2 == 0)
-      ret = false;
+      return false;
     else
-      ret = true;
+      return true;
   }
   else {
     if (x % 2 == 0)
-      ret = true;
+      return true;
     else
-      ret = false;
+      return false;
   }
-
-  //FIXME
-  if (ret)
-    qDebug() << "isBlackBox() x " << QString::number(x).toLocal8Bit() <<
-      " y " << QString::number(y).toLocal8Bit() << " IT IS black";
-  else
-    qDebug() << "isBlackBox() x " << QString::number(x).toLocal8Bit() <<
-      " y " << QString::number(y).toLocal8Bit() << " NOT black";
-
-  return ret;
 }
 
 /**
@@ -897,7 +886,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
       color = QPair<int, int>(MEN_WHITE, MEN_WHITE_KING);
     else
       color = QPair<int, int>(MEN_BLACK, MEN_BLACK_KING);
-qDebug("__BEGIN");//FIXME
+
     /** try to find any source for a move the current player should do
       (i.e. must jump) instead of the move he's currently requesting */
     for (int i = 0; i < board.size(); ++i) {
@@ -906,8 +895,6 @@ qDebug("__BEGIN");//FIXME
             (board[i][j] == color.first || board[i][j] == color.second) &&
             j != int(srcx) && i != int(srcy) &&
             showPossibleMoves(j, i, false)) {
-if (board[i][j] == MEN_NONE) qDebug("WTF MEN_NONE");//FIXME
-qDebug("JMP necessary!");//FIXME
           err_queue.append("ERR: Some jump is necessary!");
           hidePossibleMoves(false);
           return ERR_INVALID_MOVE;
@@ -915,7 +902,6 @@ qDebug("JMP necessary!");//FIXME
       }
     }
 
-qDebug("__END");//FIXME
     hidePossibleMoves(false);
   }
 
@@ -927,7 +913,6 @@ qDebug("__END");//FIXME
 
   /** check if the dst is on one of 2 or 4 allowed diagonals and in the right distance */
   bool can_jump = showPossibleMoves(srcx, srcy, false);
-qDebug() << "can_jump: " << ((can_jump) ? "true" : "false");
 
   if (board[dsty][dstx] != MEN_POSSIBLE_MOVE) {
     hidePossibleMoves(false);
@@ -1078,10 +1063,7 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
   hidePossibleMoves(false);
 
   /** check presence */
-  if (board[y][x] == MEN_NONE) {
-qDebug("MEN_NONE");//FIXME
-    return false;
-  }
+  if (board[y][x] == MEN_NONE) return false;
 
   bool can_jump = false;
   possible_move_dst = QPair<int, int>(-1, -1);
@@ -1214,7 +1196,6 @@ qDebug("MEN_NONE");//FIXME
       FIND_POSSIBLE_MOVE_FOR_MEN(x +1, y -1, x +2, y -2);
     }
     else {
-qDebug("NO CHANGE");//FIXME
       /** no change => no emit */
       return false;
     }
@@ -1225,7 +1206,6 @@ qDebug("NO CHANGE");//FIXME
 
   if (do_emit) Q_EMIT refresh();
 
-qDebug("RETURNING");//FIXME
   return can_jump;
 }
 
@@ -1560,7 +1540,8 @@ void Game::setFilePath(QString fpath) {
 
 /** received only once */
 void Game::gotConnected(void) {
-  Q_ASSERT(game_state == STATE_WAIT_FOR_CONNECTION);
+  //FIXME
+  //Q_ASSERT(game_state == STATE_WAIT_FOR_CONNECTION);
 
   /** initiate communication */
   if (socket->write(QString(
@@ -1582,6 +1563,7 @@ void Game::gotNewData(void) {
   QString s(socket->readAll());
   NetCmdParser parser(s);
 
+  qDebug() << QString (QString("known NET msg: ") + s).toLocal8Bit();
   switch (parser.getNextCmd()) {
     case NetCmdParser::INVITE:
       if (game_state == STATE_WAIT_FOR_REMOTE) {
@@ -1597,7 +1579,6 @@ void Game::gotNewData(void) {
         /** keep empty parts */
         QStringList tmp = parser.getRest().split(" ");
         remote_server_port = tmp.at(0).toInt();
-
         tmp.removeFirst();
         game_state = STATE_INVITE_RECEIVED;
 
@@ -1666,6 +1647,10 @@ void Game::gotNewData(void) {
       }
       break;
     case NetCmdParser::INVITE_REJECT:
+      game_state = STATE_END;
+      socket->disconnectFromHost();
+      Q_EMIT gotRejected();
+      break;
     case NetCmdParser::EXIT:
       game_state = STATE_END;
       socket->disconnectFromHost();
@@ -1725,4 +1710,8 @@ void Game::dispatchUserResponseExit(void) {
 
   socket->disconnectFromHost();
   game_state = STATE_END;
+}
+
+Game::state_t Game::getState(void) {
+  return game_state;
 }

@@ -19,9 +19,11 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 {
     setupUi(this);
 
+	setAttribute(Qt::WA_DeleteOnClose);
     /** regexp validator for port validation */
     QRegExpValidator* portValidator = new QRegExpValidator(QRegExp("^\[0-9]{5}$"), this);
     LineEdit_Port->setValidator(portValidator);
+	setModal(false);
 }
 
 /**

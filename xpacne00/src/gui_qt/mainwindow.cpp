@@ -101,9 +101,9 @@ void MainWindow::createLocalCpu() {
  * Create network game player vs player
  */
 void MainWindow::showNewNetDialog() {
-    ConnectDialog *d = new ConnectDialog();
+    ConnectDialog * d  = new ConnectDialog(this);
     connect(d, SIGNAL(dialogAccepted(QStringList)), this, SLOT(newNetworkGame(QStringList)));
-    d->exec();
+	d->show();
 }
 
 /**
@@ -423,7 +423,7 @@ void MainWindow::gotConnection(Game * g) {
   //FIXME
 	//qDebug() << "after game remote" << g->getState();
 
-	AcceptDialog *dialog = new AcceptDialog(g);
+	AcceptDialog *dialog = new AcceptDialog(g, this);
 	connect(dialog, SIGNAL(userAccept(Game*)), this, SLOT(inviteAccepted(Game*)));
 	connect(dialog, SIGNAL(userReject(Game*)), this, SLOT(inviteRejected(Game*)));
 	dialog->show();
@@ -469,7 +469,49 @@ void MainWindow::gotInviteSlot(Player::color_t color, QString str) {
  * Set status message to inform user about disconnect from game
  */
 void MainWindow::gotExitSlot() {
+	qDebug() << "gotExitslot";
     setStatusMsg("disconnected from remote game");
+	int i = 0;
+	bool found = false;
+	Game * g = qobject_cast<Game *>( this->sender() );
+	qDebug() << QString::number(g->getState()).toLocal8Bit();
+	if (g->getState() != Game::STATE_END) {
+		qDebug() << "hra nezacala";
+		while(!found) {
+			QWidget * w = tabWidget_Games->widget(i);
+			GameBoard * b = qobject_cast<GameBoard *>(w);
+			if (b->getGame() == g) {
+				found = true;
+				break;
+			}
+			i++;
+		}
+		if (found) {
+			this->removeGame(i);
+		}
+	}
+}
+
+void MainWindow::gotRejected() {
+	
+	int i = 0;
+	bool found = false;
+	Game * g = qobject_cast<Game *>( this->sender() );
+	
+	qDebug() << "hra nezacala";
+	while(!found) {
+		QWidget * w = tabWidget_Games->widget(i);
+		GameBoard * b = qobject_cast<GameBoard *>(w);
+		if (b->getGame() == g) {
+			found = true;
+			break;
+		}
+		i++;
+	}
+	if (found) {
+		this->removeGame(i);
+	}
+	setStatusMsg("User rejected network game");
 }
 
 /**
@@ -480,8 +522,8 @@ void MainWindow::newNetworkGame(QStringList list) {
 
     //prepared_game = new Game(server);
 	Game * g = new Game(server);
-	prepared_board = new GameBoard(g);
-	//this->addGame(b);
+	GameBoard * b  = new GameBoard(g);
+	this->addGame(b);
 
 	//qDebug() <<prepared_game << "new network game before gameRemote" << QString::number(prepared_game == NULL).toLocal8Bit();
 
@@ -491,8 +533,9 @@ void MainWindow::newNetworkGame(QStringList list) {
     //connect(prepared_game, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
     //connect(prepared_game, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
 
-    qDebug() << connect(g, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
-	qDebug() << connect(g, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
+    connect(g, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
+	connect(g, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
+	connect(g, SIGNAL(gotRejected()), this, SLOT(gotRejected()));
     
 	//if (! (prepared_game->gameRemote(addr, list.at(1).toUInt(), Player::COLOR_WHITE))) {
     //    setStatusMsg(prepared_game->getError());
