@@ -301,6 +301,7 @@ class Game : public QObject {
     /** let the user accept the new connection */
     void gotInvite(Player::color_t, QString);
     void gotExit(void);
+	void gotRejected(void);
 };
 
 #endif

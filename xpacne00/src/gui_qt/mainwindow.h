@@ -86,6 +86,7 @@ private slots:
     void gotConnection(Game *);
     /** user disconnected slot */
     void gotExitSlot();
+	void gotRejected();
     void newNetworkGame(QStringList list);
     void savePlayer(Player::color_t color, QString alias, GameBoard * b);
     void gotInviteSlot(Player::color_t color, QString str);

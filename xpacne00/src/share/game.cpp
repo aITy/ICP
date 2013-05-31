@@ -602,9 +602,12 @@ bool Game::gameRemote(QHostAddress addr, int port, Player::color_t color) {
 
   initXml();
   prepareNewSocket(addr, port);
-  game_state = STATE_WAIT_FOR_CONNECTION;
 
-  if (! remote_will_load) Q_EMIT refresh();
+  if (! remote_will_load) {
+	game_state = STATE_WAIT_FOR_CONNECTION;
+	Q_EMIT refresh();
+
+  }
 
   return true;
 }
@@ -721,7 +724,7 @@ bool Game::gameFromFile(QString s, Player::color_t color) {
               attributeNode(XML::STR_HOST).value()),
             QString(doc->documentElement().
               firstChildElement(XML::STR_GAME).
-              attributeNode(XML::STR_HOST).value()).toInt(), color)) {
+              attributeNode(XML::STR_PORT).value()).toInt(), color)) {
         remote_will_load = false;
         game_state = STATE_PRE_INIT;
         doc->clear();  /**< tidy up garbage from setContent() */
@@ -1543,7 +1546,7 @@ void Game::setFilePath(QString fpath) {
 
 /** received only once */
 void Game::gotConnected(void) {
-  Q_ASSERT(game_state == STATE_WAIT_FOR_CONNECTION);
+  //Q_ASSERT(game_state == STATE_WAIT_FOR_CONNECTION);
 
   /** initiate communication */
   if (socket->write(QString(
@@ -1565,7 +1568,7 @@ void Game::gotNewData(void) {
   QString s(socket->readAll());
   NetCmdParser parser(s);
 
-  qDebug() << QString (QString("unknown NET msg: ") + s).toLocal8Bit();
+  qDebug() << QString (QString("known NET msg: ") + s).toLocal8Bit();
   switch (parser.getNextCmd()) {
     case NetCmdParser::INVITE:
       if (game_state == STATE_WAIT_FOR_REMOTE) {
@@ -1581,6 +1584,7 @@ void Game::gotNewData(void) {
         /** keep empty parts */
         QStringList tmp = parser.getRest().split(" ");
         remote_server_port = tmp.at(0).toInt();
+		qDebug() << remote_server_port << "port";
         tmp.removeFirst();
         game_state = STATE_INVITE_RECEIVED;
 
@@ -1647,6 +1651,10 @@ void Game::gotNewData(void) {
       }
       break;
     case NetCmdParser::INVITE_REJECT:
+		game_state = STATE_END;
+		socket->disconnectFromHost();
+		Q_EMIT gotRejected();
+		break;
     case NetCmdParser::EXIT:
       game_state = STATE_END;
       socket->disconnectFromHost();
@@ -1660,8 +1668,13 @@ void Game::gotNewData(void) {
 
 void Game::gotDisconnected(void) {
   socket->deleteLater();
-  if (! isInNetworkMeantime())
+  if (! isInNetworkMeantime()){
     game_state = STATE_END;
+	qDebug() << "state_end";
+  }
+  else {
+  	qDebug() << "hra nezacala";
+  }
   Q_EMIT refresh();
 }
 

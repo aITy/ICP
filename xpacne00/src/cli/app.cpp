@@ -73,8 +73,11 @@ void App::refresh(void) {
       qtout << "local";
     else
       qtout << "remote: " <<
-        g->getRemoteAddr().toString() << ":" <<
-        QString::number(g->getRemotePort()) << endl;
+        
+        ":" <<
+        QString::number(0) << endl;
+		/*g->getRemoteAddr().toString() << ":" <<
+        QString::number(g->getRemotePort()) << endl;*/
   }
   else {
     qtout << "none";

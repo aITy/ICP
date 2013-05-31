@@ -12,6 +12,7 @@ AcceptDialog::AcceptDialog(Game * game, QWidget *parent)
 {
     g = game;
 	setupUi(this);
+	setAttribute(Qt::WA_DeleteOnClose);
 	QAbstractButton * ok = buttonBox->buttons().at(0);
 	QAbstractButton * no = buttonBox->buttons().at(1);
 	connect(ok, SIGNAL(clicked()), this, SLOT(accepting()));
