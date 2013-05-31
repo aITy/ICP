@@ -408,7 +408,8 @@ void MainWindow::incomingConnection() {
  */
 
 void MainWindow::gotConnection(Game * g) {
-  qDebug() << "beggening of gotConnection() " << g->getState();
+  //FIXME
+  //qDebug() << "beggening of gotConnection() " << g->getState();
 
   connect(g, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
   connect(g, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
@@ -419,7 +420,8 @@ void MainWindow::gotConnection(Game * g) {
 	  setStatusMsg(g->getError());
 	  return;
 	}
-	qDebug() << "after game remote" << g->getState();
+  //FIXME
+	//qDebug() << "after game remote" << g->getState();
 
 	AcceptDialog *dialog = new AcceptDialog(g);
 	connect(dialog, SIGNAL(userAccept(Game*)), this, SLOT(inviteAccepted(Game*)));
@@ -427,7 +429,8 @@ void MainWindow::gotConnection(Game * g) {
 	dialog->show();
   }
   else {
-	qDebug() << "hasPendingConnection fail " << g->getState();
+  //FIXME
+	//qDebug() << "hasPendingConnection fail " << g->getState();
   }
 }
 
