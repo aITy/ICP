@@ -1552,7 +1552,7 @@ void Game::gotConnected(void) {
         ).toLocal8Bit()) == -1) {
     err_queue.append(socket->errorString());
   }
-  qDebug() << "invite poslany";
+
   socket->flush();
   game_state = STATE_INVITE_DISPATCH;
 }
@@ -1579,7 +1579,6 @@ void Game::gotNewData(void) {
         /** keep empty parts */
         QStringList tmp = parser.getRest().split(" ");
         remote_server_port = tmp.at(0).toInt();
-		qDebug() << remote_server_port << "port";
         tmp.removeFirst();
         game_state = STATE_INVITE_RECEIVED;
 
@@ -1665,13 +1664,8 @@ void Game::gotNewData(void) {
 
 void Game::gotDisconnected(void) {
   socket->deleteLater();
-  if (! isInNetworkMeantime()){
+  if (! isInNetworkMeantime())
     game_state = STATE_END;
-	qDebug() << "state_end";
-  }
-  else {
-  	qDebug() << "hra nezacala";
-  }
   Q_EMIT refresh();
 }
 
@@ -1688,9 +1682,8 @@ void Game::dispatchUserResponseInvite(bool yes) {
   Q_ASSERT(socket != NULL);
 
   /** this slot must be called only after invite was received */
-  qDebug() << "before state_invite_received check";  
-if (game_state != STATE_INVITE_RECEIVED) return;
-  qDebug() << "after state_invite_received check";
+  if (game_state != STATE_INVITE_RECEIVED) return;
+
   if (yes) {
     if (socket->write(QString(TOK::INVITE_ACCEPT +
             ((player_white->local) ? player_white->name : player_black->name))
