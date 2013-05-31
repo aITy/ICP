@@ -883,7 +883,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
       color = QPair<int, int>(MEN_WHITE, MEN_WHITE_KING);
     else
       color = QPair<int, int>(MEN_BLACK, MEN_BLACK_KING);
-
+//qDebug("howk00");//FIXME
     /** try to find any source for a move the current player should do
       (i.e. must jump) instead of the move he's currently requesting */
     for (int i = 0; i < board.size(); ++i) {
@@ -892,6 +892,7 @@ Game::err_t Game::move(unsigned int srcx, unsigned int srcy,
             (board[i][j] == color.first || board[i][j] == color.second) &&
             j != int(srcx) && i != int(srcy) &&
             showPossibleMoves(j, i, false)) {
+//qDebug("JMP necessary!");//FIXME
           err_queue.append("ERR: Some jump is necessary!");
           hidePossibleMoves(false);
           return ERR_INVALID_MOVE;
@@ -1060,8 +1061,10 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
   hidePossibleMoves(false);
 
   /** check presence */
-  if (board[y][x] == MEN_NONE)
+  if (board[y][x] == MEN_NONE) {
+//qDebug("MEN_NONE");//FIXME
     return false;
+  }
 
   bool can_jump = false;
   possible_move_dst = QPair<int, int>(-1, -1);
@@ -1194,6 +1197,7 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
       FIND_POSSIBLE_MOVE_FOR_MEN(x +1, y -1, x +2, y -2);
     }
     else {
+//qDebug("NO CHANGE");//FIXME
       /** no change => no emit */
       return false;
     }
@@ -1204,6 +1208,7 @@ bool Game::showPossibleMoves(unsigned int x, unsigned int y, bool do_emit) {
 
   if (do_emit) Q_EMIT refresh();
 
+//qDebug("RETURNING");//FIXME
   return can_jump;
 }
 
@@ -1654,7 +1659,8 @@ void Game::gotNewData(void) {
 
 void Game::gotDisconnected(void) {
   socket->deleteLater();
-  game_state = STATE_END;
+  if (! isInNetworkMeantime())
+    game_state = STATE_END;
   Q_EMIT refresh();
 }
 
