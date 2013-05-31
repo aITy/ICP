@@ -13,6 +13,7 @@
 #include "connectdialog.h"
 #include "acceptdialog.h"
 #include "help.h"
+#include "canvas.h"
 
 #include <QApplication>
 #include <QList>
@@ -38,6 +39,8 @@ public:
 
     /** add game function and function that return games count*/
     void addGame(GameBoard * );
+	void removeLastGame();
+	void removeGame(int);
     int getGamesCount();
 
     /** sets status bar msg functions */
@@ -74,12 +77,13 @@ private:
     QList<GameBoard*> games_arr;
     /** server */
     QTcpServer * server;
-
+	/** stored pointer on prepared game */
+	Game * prepared_game;
+	GameBoard * prepared_board;
 private slots:
-    /** got connection slots */
-    void gotConnection();
-    void inviteAccepted();
-    void inviteRejected();
+    /** got connection slot */
+	void incomingConnection();
+    void gotConnection(Game *);
     /** user disconnected slot */
     void gotExitSlot();
     void newNetworkGame(QStringList list);
@@ -107,7 +111,8 @@ private slots:
     void help();
     bool saveIcp();
     bool saveXml();
-
+	void inviteAccepted(Game *);
+	void inviteRejected(Game *);
 signals:
     void storePlayer(Player::color_t, QString, GameBoard*);
 };

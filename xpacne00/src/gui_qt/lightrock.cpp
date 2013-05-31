@@ -15,7 +15,6 @@
 
 LightRock::LightRock() {
 
-    setFlag(ItemIsMovable);
     king = false;
 }
 

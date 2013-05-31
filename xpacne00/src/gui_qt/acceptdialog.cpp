@@ -4,10 +4,26 @@
  */
 
 #include "acceptdialog.h"
+#include <QAbstractButton>
 
 
-AcceptDialog::AcceptDialog(QWidget *parent)
-        :QDialog(parent)
+AcceptDialog::AcceptDialog(Game * game, QWidget *parent)
+        : QDialog(parent)
 {
-    setupUi(this);
+    g = game;
+	setupUi(this);
+	QAbstractButton * ok = buttonBox->buttons().at(0);
+	QAbstractButton * no = buttonBox->buttons().at(1);
+	connect(ok, SIGNAL(clicked()), this, SLOT(accepting()));
+	connect(no, SIGNAL(clicked()), this, SLOT(rejecting()));
+}
+
+void AcceptDialog::accepting() {
+	emit(userAccept(g));
+	this->accept();
+}
+
+void AcceptDialog::rejecting() {
+	emit(userReject(g));
+	this->reject();
 }

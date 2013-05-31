@@ -1539,7 +1539,7 @@ void Game::gotConnected(void) {
         ).toLocal8Bit()) == -1) {
     err_queue.append(socket->errorString());
   }
-
+  qDebug() << "invite poslany";
   socket->flush();
   game_state = STATE_INVITE_DISPATCH;
 }
@@ -1550,6 +1550,7 @@ void Game::gotNewData(void) {
   QString s(socket->readAll());
   NetCmdParser parser(s);
 
+  qDebug() << QString (QString("unknown NET msg: ") + s).toLocal8Bit();
   switch (parser.getNextCmd()) {
     case NetCmdParser::INVITE:
       if (game_state == STATE_WAIT_FOR_REMOTE) {
@@ -1661,8 +1662,9 @@ void Game::dispatchUserResponseInvite(bool yes) {
   Q_ASSERT(socket != NULL);
 
   /** this slot must be called only after invite was received */
-  if (game_state != STATE_INVITE_RECEIVED) return;
-
+  qDebug() << "before state_invite_received check";  
+if (game_state != STATE_INVITE_RECEIVED) return;
+  qDebug() << "after state_invite_received check";
   if (yes) {
     if (socket->write(QString(TOK::INVITE_ACCEPT +
             ((player_white->local) ? player_white->name : player_black->name))
@@ -1689,4 +1691,8 @@ void Game::dispatchUserResponseExit(void) {
 
   socket->disconnectFromHost();
   game_state = STATE_END;
+}
+
+Game::state_t Game::getState(void) {
+	return game_state;
 }

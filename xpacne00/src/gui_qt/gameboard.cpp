@@ -254,7 +254,7 @@ void GameBoard::refresh() {
 
 
     /** if the move is valid */
-    if (game->getError().isEmpty()) {
+    //if (game->getError().isEmpty()) {
         /** check if some possible moves are on the core board */
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -326,7 +326,8 @@ void GameBoard::refresh() {
         /** set content of moves notification area */
         lineedit_moves = game->getIcpSyntaxStr(false);
         MainWindow::getInstance()->setLineEditText(lineedit_moves);
-    }
+    //}
+	//checkForEmptyBoard();
 }
 
 /**
@@ -391,4 +392,11 @@ void GameBoard::sceneUpdate(uint srcx, uint srcy, uint destx, uint desty) {
 void GameBoard::toutExpired() {
     game->hidePossibleMoves();
     hidePossibleMoves();
+}
+
+void GameBoard::checkForEmptyBoard() {
+	if (canvas->items().count() == 0) {
+		this->refresh();
+		qDebug() << "prazdno";
+	}
 }

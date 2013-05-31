@@ -19,13 +19,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
     /** start TCP server */
     server = new QTcpServer(this);
-    connect(server, SIGNAL(newConnection()), this, SLOT(gotConnection()));
+    connect(server, SIGNAL(newConnection()), this, SLOT(incomingConnection()));
     if (! server->listen(QHostAddress::Any, 0))
         setStatusMsg("TCP server is not listening");
     else
         portLabel->setText(portLabel->text() + QString::number(server->serverPort()));
 
-    connect(this, SIGNAL(storePlayer(Player::color_t,QString, GameBoard*)), this, SLOT(savePlayer(Player::color_t, QString, GameBoard*)));
+    //connect(this, SIGNAL(storePlayer(Player::color_t,QString, GameBoard*)), this, SLOT(savePlayer(Player::color_t, QString, GameBoard*)));
+	prepared_game = NULL;
+	prepared_board = NULL;
 }
 
 
@@ -54,7 +56,7 @@ void MainWindow::setupActions() {
         // connects
         connect(action_NewLocalGame, SIGNAL(triggered()), this, SLOT(createLocalCpu()));
         connect(action_NewLocalGameVs, SIGNAL(triggered()), this, SLOT(createLocalVs()));
-        //connect(action_NewNetGame, SIGNAL(triggered()), this, SLOT(showNewNetDialog()));
+        connect(action_NewNetGame, SIGNAL(triggered()), this, SLOT(showNewNetDialog()));
         connect(action_Open, SIGNAL(triggered()), this, SLOT(openFromFile()));
         connect(action_OpenReplay, SIGNAL(triggered()), this, SLOT(openReplayFromFile()));
         connect(action_SaveIcp, SIGNAL(triggered()), this, SLOT(saveIcp()));
@@ -84,16 +86,15 @@ void MainWindow::createLocalVs() {
  */
 void MainWindow::createLocalCpu() {
     Game *g = new Game(server);
-    g->gameLocal(true);
+    GameBoard *b = new GameBoard(g);
+    this->addGame(b);
 
-    if (g->getError().isEmpty()) {
-
-        GameBoard *b = new GameBoard(g);
-        this->addGame(b);
+    g->gameLocal(false);
+	if (! g->getError().isEmpty()) {
+       setStatusMsg(g->getError());
+ 	   removeLastGame();
     }
-    else {
-        setStatusMsg(g->getError());
-    }
+	
 }
 
 /**
@@ -110,7 +111,7 @@ void MainWindow::showNewNetDialog() {
  */
 void MainWindow::openFromFile(){
     QFileDialog openDialog(this);
-    QString filename = openDialog.getOpenFileName(this, trUtf8("Open game from file"), "", "XML | ICP files(*.xml *.*)");
+    QString filename = openDialog.getOpenFileName(this, trUtf8("Open game from file"), "", "");
     if (filename == NULL)
         return;
     Game *g = new Game(server);
@@ -140,7 +141,7 @@ void MainWindow::openReplayFromFile() {
         GameBoard *b = new GameBoard(g);
         this->addGame(b);
         toggleReplayButtons(g);
-        MainWindow::setLineEditText(g->getIcpSyntaxStr(true));
+        setLineEditText(g->getIcpSyntaxStr(true));
         b->refresh();
     }
     else {
@@ -208,10 +209,15 @@ void MainWindow::on_tabWidget_Games_tabCloseRequested(int index)
             QMessageBox::Yes | QMessageBox::No,
             QMessageBox::No);
 
-    if (choice == QMessageBox::Yes)
-            tabWidget_Games->removeTab(index);
+    if (choice == QMessageBox::Yes) {
+			delete games_arr.at(index)->getGame();
+            delete games_arr.at(index);
+			games_arr.removeAt(index);
+			moves_str.removeAt(index);
+			tabWidget_Games->removeTab(index);
+	}
     else
-           return;
+		return;
 }
 
 /**
@@ -225,6 +231,25 @@ void MainWindow::addGame(GameBoard * board) {
     tabWidget_Games->setCurrentIndex(tabWidget_Games->count() - 1);
     pushButton_Advice->setEnabled(true);
 }
+
+void MainWindow::removeLastGame() {
+	qDebug() << "removeLastGame";
+	delete games_arr.last()->getGame();
+	delete games_arr.last();
+	games_arr.removeLast();
+	moves_str.removeLast();
+	tabWidget_Games->removeTab(tabWidget_Games->count() - 1);  
+}
+
+void MainWindow::removeGame(int i) {
+	qDebug() << "removeGame";
+	delete games_arr.at(i)->getGame();
+	delete games_arr.at(i);
+	games_arr.removeAt(i);
+	moves_str.removeAt(i);
+	tabWidget_Games->removeTab(i);
+}
+
 
 /**
  * Set status mesage for 2,5s
@@ -260,7 +285,8 @@ void MainWindow::clearMoves() {
 
 void MainWindow::on_tabWidget_Games_currentChanged(int index)
 {
-    if (index != -1) {
+    
+	if (index != -1) {
         lineEdit_Moves->setPlainText(games_arr.at(index)->lineedit_moves);
         Game * g = games_arr.at(index)->getGame();
         toggleReplayButtons(g);
@@ -370,19 +396,50 @@ void MainWindow::help() {
     dialog->show();
 }
 
+
+void MainWindow::incomingConnection() {
+	Game *g = new Game(server);
+	gotConnection(g);
+}
+
+
 /**
  * Process invitation to new network game
  */
 
-void MainWindow::gotConnection() {
-    if (server->hasPendingConnections()) {
-        Game *g = new Game(server);
-        GameBoard *b = new GameBoard(g);
-        this->addGame(b);
-        if (! g->gameRemote(server->nextPendingConnection())) {
-            setStatusMsg(g->getError());
-        }
-    }
+void MainWindow::gotConnection(Game * g) {
+  qDebug() << "beggening of gotConnection() " << g->getState();
+
+  connect(g, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
+  connect(g, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
+
+  if (server->hasPendingConnections()) {
+	if (! g->gameRemote(server->nextPendingConnection())) {
+	  qDebug() << "gameRemote fail";
+	  setStatusMsg(g->getError());
+	  return;
+	}
+	qDebug() << "after game remote" << g->getState();
+
+	AcceptDialog *dialog = new AcceptDialog(g);
+	connect(dialog, SIGNAL(userAccept(Game*)), this, SLOT(inviteAccepted(Game*)));
+	connect(dialog, SIGNAL(userReject(Game*)), this, SLOT(inviteRejected(Game*)));
+	dialog->show();
+  }
+  else {
+	qDebug() << "hasPendingConnection fail " << g->getState();
+  }
+}
+
+void MainWindow::inviteAccepted(Game * g) {
+	GameBoard * b = new GameBoard(g);
+	this->addGame(b);
+	g->dispatchUserResponseInvite(true);
+}
+
+void MainWindow::inviteRejected(Game * g) {
+	g->dispatchUserResponseInvite(false);
+	delete g;
 }
 
 /**
@@ -391,14 +448,18 @@ void MainWindow::gotConnection() {
  */
 
 void MainWindow::gotInviteSlot(Player::color_t color, QString str) {
-    AcceptDialog * dialog = new AcceptDialog();
-    //Game *g = games_arr.at(tabWidget_Games->currentIndex())->getGame();
-    GameBoard *b = games_arr.at(tabWidget_Games->currentIndex());
-    connect(dialog, SIGNAL(accepted()), this, SLOT(inviteAccepted()));
-    connect(dialog, SIGNAL(rejected()), this, SLOT(inviteReject()));
-    emit(storePlayer(color, str, b));
+    //GameBoard *b = games_arr.at(tabWidget_Games->currentIndex());
+    //emit(storePlayer(color, str, b));
+	
+	qDebug() <<prepared_game << "gotInviteSlot " << QString::number(prepared_game == NULL).toLocal8Bit();
+	if (prepared_board != NULL) {
+		
+		this->addGame(prepared_board);
+		qDebug() << "prisel inviteSlot";
+	}
 
-    dialog->exec();
+	qDebug() << "prisel inviteslot";
+	setStatusMsg("User accepted your invite on network game");
 }
 
 /**
@@ -414,31 +475,33 @@ void MainWindow::gotExitSlot() {
 
 void MainWindow::newNetworkGame(QStringList list) {
 
-    Game * g = new Game(server);
-    GameBoard *b = new GameBoard(g);
-    this->addGame(b);
+    //prepared_game = new Game(server);
+	Game * g = new Game(server);
+	prepared_board = new GameBoard(g);
+	//this->addGame(b);
+
+	//qDebug() <<prepared_game << "new network game before gameRemote" << QString::number(prepared_game == NULL).toLocal8Bit();
 
     QHostAddress addr;
-    addr.setAddress(list.at(0)); 
+    addr.setAddress(list.at(0));
 
-    connect(g, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t,QString)));
-    connect(g, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
+    //connect(prepared_game, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
+    //connect(prepared_game, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
 
-    if (! (g->gameRemote(addr, list.at(1).toInt(), Player::COLOR_WHITE))) {
+    qDebug() << connect(g, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
+	qDebug() << connect(g, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
+    
+	//if (! (prepared_game->gameRemote(addr, list.at(1).toUInt(), Player::COLOR_WHITE))) {
+    //    setStatusMsg(prepared_game->getError());
+
+	if (! (g->gameRemote(addr, list.at(1).toUInt(), Player::COLOR_WHITE))) {
         setStatusMsg(g->getError());
+		qDebug() << "prepared game game remote fail";
     }
-
+	//qDebug() << prepared_game << "new netwrk game after gameRemote" << QString::number(prepared_game == NULL).toLocal8Bit();
+	
 }
 
-void MainWindow::inviteRejected() {
-    Game *g = games_arr.at(tabWidget_Games->currentIndex())->getGame();
-    g->dispatchUserResponseInvite(false);
-}
-
-void MainWindow::inviteAccepted() {
-    Game *g = games_arr.at(tabWidget_Games->currentIndex())->getGame();
-    g->dispatchUserResponseInvite(true);
-}
 
 void MainWindow::savePlayer(Player::color_t color, QString alias, GameBoard * b) {
     b->player_alias = alias;

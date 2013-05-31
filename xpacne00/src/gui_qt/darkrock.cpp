@@ -16,7 +16,6 @@
 
 DarkRock::DarkRock() {
     king = false;
-    setFlag(ItemIsMovable);
 }
 
 DarkRock::~DarkRock() {

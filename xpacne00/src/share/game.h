@@ -241,7 +241,6 @@ class Game : public QObject {
     int getRemotePort(void);
     QString getFilePath(void);
     void setFilePath(QString);
-
   private:
     /** the whole game XML tree including history */
     QDomDocument *doc;
