@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<!-- standalone because we have no DTD for it -->
+<draughts version="1.0">
+ <game port="43951" host="127.0.0.1" type="network"/>
+ <players>
+  <black>Player Black</black>
+  <white>Player White</white>
+ </players>
+ <moves>
+  <move became-a-king="false" dstx="0" srcx="1" dsty="3" srcy="2" kicked="none" kickedx="-1" kickedy="-1"/>
+ </moves>
+</draughts>
