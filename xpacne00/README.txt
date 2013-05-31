@@ -18,3 +18,5 @@ problemy:
   bezpecnost sitove komunikace neresime
 
 vim: set wrap:
+=======
+základní přehled o co jde, poznámky, ...
