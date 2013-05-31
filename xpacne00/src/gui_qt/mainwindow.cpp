@@ -103,7 +103,7 @@ void MainWindow::createLocalCpu() {
 void MainWindow::showNewNetDialog() {
     ConnectDialog *d = new ConnectDialog();
     connect(d, SIGNAL(dialogAccepted(QStringList)), this, SLOT(newNetworkGame(QStringList)));
-    d->exec();
+    d->show();
 }
 
 /**
@@ -466,7 +466,22 @@ void MainWindow::gotInviteSlot(Player::color_t color, QString str) {
  * Set status message to inform user about disconnect from game
  */
 void MainWindow::gotExitSlot() {
+	qDebug() << "gotExitslot";
     setStatusMsg("disconnected from remote game");
+	int i = 0;
+	bool found = false;
+	Game * g = qobject_cast<Game *>( this->sender() );
+	if (g->getState() != Game::STATE_END) {
+		while(!found) {
+			QWidget * w = tabWidget_Games->widget(i);
+			GameBoard * b = qobject_cast<GameBoard *>(w);
+			if (b->getGame() == g)
+				found = true;
+		}
+		if (found) {
+			this->removeGame(i + 1);
+		}
+	}
 }
 
 /**
@@ -477,8 +492,8 @@ void MainWindow::newNetworkGame(QStringList list) {
 
     //prepared_game = new Game(server);
 	Game * g = new Game(server);
-	prepared_board = new GameBoard(g);
-	//this->addGame(b);
+	GameBoard * b  = new GameBoard(g);
+	this->addGame(b);
 
 	//qDebug() <<prepared_game << "new network game before gameRemote" << QString::number(prepared_game == NULL).toLocal8Bit();
 
@@ -488,8 +503,8 @@ void MainWindow::newNetworkGame(QStringList list) {
     //connect(prepared_game, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
     //connect(prepared_game, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
 
-    qDebug() << connect(g, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
-	qDebug() << connect(g, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
+    connect(g, SIGNAL(gotInvite(Player::color_t, QString)), this, SLOT(gotInviteSlot(Player::color_t, QString)));
+	connect(g, SIGNAL(gotExit()), this, SLOT(gotExitSlot()));
     
 	//if (! (prepared_game->gameRemote(addr, list.at(1).toUInt(), Player::COLOR_WHITE))) {
     //    setStatusMsg(prepared_game->getError());
